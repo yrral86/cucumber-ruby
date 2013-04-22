@@ -137,9 +137,10 @@ module Cucumber
             node.keyword,
             node.name.lstrip,
             node.description.rstrip,
-            children.map { |builder| builder.result(background, language, tags) }
+            children.map { |builder| builder.result(background, language, tags) },
+            node: node,
+            file: file,
           )
-          feature.gherkin_statement(node)
           feature.language = language
           feature
         end

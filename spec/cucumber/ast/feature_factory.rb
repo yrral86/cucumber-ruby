@@ -2,6 +2,7 @@ require 'cucumber/ast'
 
 module Cucumber
   module Ast
+    # TODO: This file uses the test fixture antipattern. It would be preferable to use something more like features/support/feature_factory.rb
     module FeatureFactory
       class MyWorld
         def flunk
@@ -39,7 +40,9 @@ module Cucumber
           ]
         )
 
-        location = Location.new('features/pretty_printing.feature', 0)
+        feature_node = stub
+        file = 'features/pretty_printing.feature'
+        location = Location.new(file, 0)
 
         Ast::Feature.new(
           location,
@@ -62,7 +65,9 @@ module Cucumber
               Step.new(language, location.on_line(11), "Given", "a happy step with an inline arg:", doc_string),
               Step.new(language, location.on_line(12), "Given", "a failing step")
             ]
-          )]
+          )],
+          node: feature_node,
+          file: file,
         )
       end
     end

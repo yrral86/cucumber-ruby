@@ -24,6 +24,8 @@ module Cucumber
       end
 
       def file
+        return @file if self.respond_to?(:node)
+        # TODO remove once all classes use nodes
         location.file
       end
 
@@ -32,6 +34,8 @@ module Cucumber
       end
 
       def location
+        return Location.new(file, node.line) if self.respond_to?(:node)
+        # TODO remove once all classes use nodes
         raise('Please set @location in the constructor') unless @location
         raise("@location must be an Ast::Location but is a #{@location.class}") unless @location.is_a?(Location)
         @location

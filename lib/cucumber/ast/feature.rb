@@ -4,24 +4,33 @@ require 'cucumber/ast/location'
 
 module Cucumber
   module Ast
+    module HasNode
+      attr_reader :node
+
+      def gherkin_statement
+        warn("Deprecated. Use #node instead. #{caller[0]}")
+        node
+      end
+    end
+
+    #
     # Represents the root node of a parsed feature.
     class Feature #:nodoc:
+      include HasNode
       include Names
       include HasLocation
 
       attr_accessor :language
       attr_reader :feature_elements
 
-      def initialize(location, background, comment, tags, keyword, title, description, feature_elements)
-        @background, @comment, @tags, @keyword, @title, @description, @feature_elements = background, comment, tags, keyword, title, description, feature_elements
-        @background.feature = self
+      def initialize(location, background, comment, tags, keyword, title, description, feature_elements, attributes = {})
+        @node = attributes.fetch(:node)
+        @file = attributes.fetch(:file)
+        @background, @feature_elements = background, feature_elements
+        @comment, @tags, @keyword, @title, @description, = comment, tags, keyword, title, description
+        @background.feature = self # TODO remove circular reference
         @location = location
         @feature_elements.each { |e| e.feature = self }
-      end
-
-      attr_reader :gherkin_statement
-      def gherkin_statement(statement=nil)
-        @gherkin_statement ||= statement
       end
 
       def step_count

@@ -34,10 +34,6 @@ Feature: HTML output formatter
       end
       """
 
-  Scenario: an scenario outline, one undefined step, one random example, expand flag on
-    When I run `cucumber features/scenario_outline_with_undefined_steps.feature --format html --expand `
-    Then it should pass
-
   Scenario Outline: an scenario outline, one pending step
     When I run `cucumber <file> --format html <flag>`
     Then it should pass
@@ -55,6 +51,10 @@ Feature: HTML output formatter
       | features/scenario_outline_with_pending_step.feature    |          |
       | features/scenario_outline_with_undefined_steps.feature | --expand |
       | features/scenario_outline_with_undefined_steps.feature |          |
+
+  Scenario: an scenario outline, one undefined step, one random example, expand flag on
+    When I run `cucumber features/scenario_outline_with_undefined_steps.feature --format html --expand `
+    Then it should pass
 
   Scenario: when using a profile the html shouldn't include 'Using the default profile...'
     And a file named "cucumber.yml" with:

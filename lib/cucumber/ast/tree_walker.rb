@@ -48,9 +48,12 @@ module Cucumber
 
       # +feature_element+ is either Scenario or ScenarioOutline
       def visit_feature_element(feature_element)
+        @seen_feature_elements ||= []
+        return if @seen_feature_elements.include?(feature_element)
         broadcast(feature_element) do
           feature_element.accept(self)
         end
+        @seen_feature_elements << feature_element
       end
 
       def visit_background(background, &block)

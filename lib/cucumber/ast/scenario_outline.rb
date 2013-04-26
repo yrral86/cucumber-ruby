@@ -35,7 +35,6 @@ module Cucumber
 
       def accept(visitor)
         return if Cucumber.wants_to_quit
-        raise_missing_examples_error unless @example_sections
         comment.accept(visitor)
         tags.accept(visitor)
         visitor.visit_scenario_name(@keyword, name, file_colon_line, source_indent(first_line_length))
@@ -108,6 +107,7 @@ module Cucumber
 
       def examples_array
         return @examples_array if @examples_array
+        raise_missing_examples_error unless @example_sections
         @examples_array = @example_sections.map do |section|
           create_examples_table(section)
         end

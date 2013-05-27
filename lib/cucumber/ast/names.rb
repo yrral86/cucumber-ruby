@@ -8,6 +8,10 @@ module Cucumber
         s += "\n#{@description}" if @description != ""
         s
       end
+
+      def to_s
+        @title
+      end
     end
   end
 end

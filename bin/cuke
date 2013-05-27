@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# encoding: UTF-8
 $: << File.dirname(__FILE__) + '/../lib'
 
 require 'cucumber/platform'
@@ -8,10 +9,38 @@ require 'cucumber/feature_file'
 module Cucumber
 
   module Executable
+    module Result
+      Passed = Class.new do
+        def to_s
+          "✓"
+        end
+
+        def passed?
+          true
+        end
+      end.new
+
+      Failed = Class.new do
+        def to_s
+          "✗"
+        end
+
+        def passed?
+          false
+        end
+      end.new
+    end
+
     class Base
+      attr_reader :result
+
       def execute(reporter)
         run_steps
         send_result_to reporter
+      end
+
+      def passed?
+        result.passed?
       end
 
       private
@@ -37,14 +66,10 @@ module Cucumber
         printer.executable_scenario(self)
       end
 
-      def passed?
-        true # TODO
-      end
-
       private
 
       def run_steps
-        # noop for now. TODO
+        @result = Result::Passed # TODO
       end
 
     end
@@ -56,19 +81,14 @@ module Cucumber
         @feature, @background, @scenario_outline = feature, background, scenario_outline
       end
 
-      def passed?
-        false # TODO
-      end
-
       def describe_to(printer)
         printer.executable_examples_table_row(self)
       end
 
-
       private
 
       def run_steps
-        # noop, for now. TODO
+        @result = Result::Failed
       end
 
     end
@@ -122,14 +142,14 @@ module Cucumber
     def executable_scenario(executable)
       feature, scenario = executable.feature, executable.scenario
       puts feature.title unless feature == current_feature
-      puts "  #{scenario.title}"
+      puts "  #{executable.result} #{scenario}"
       @current_feature = feature
     end
 
     def executable_examples_table_row(executable)
       feature, scenario_outline = executable.feature, executable.scenario_outline
       puts feature.title unless feature == current_feature
-      puts "  #{scenario_outline.title}"
+      puts "  #{executable.result} #{scenario_outline}"
       @current_feature = feature
     end
 

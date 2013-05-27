@@ -3,14 +3,9 @@ $: << File.dirname(__FILE__) + '/../lib'
 
 require 'cucumber/platform'
 require 'cucumber/ast'
+require 'cucumber/feature_file'
 
 module Cucumber
-  files = Dir['features/docs/**/*.feature']
-  require 'cucumber/feature_file'
-  features = files.map do |path|
-    FeatureFile.new(path).parse([], {})
-  end
-
 
   module Executable
     class Base
@@ -62,7 +57,7 @@ module Cucumber
       end
 
       def passed?
-        false
+        false # TODO
       end
 
       def describe_to(printer)
@@ -123,64 +118,66 @@ module Cucumber
     attr_reader :current_feature, :current_background, :current_scenario_outline, :current_examples_table
   end
 
-  class PrettyConsoleReporter
-    class PrettyPrinter
-      def executable_scenario(executable)
-        feature, scenario = executable.feature, executable.scenario
-        puts feature.title unless feature == current_feature
-        puts "  #{scenario.title}"
-        @current_feature = feature
-      end
-
-      def executable_examples_table_row(executable)
-        feature, scenario_outline = executable.feature, executable.scenario_outline
-        puts feature.title unless feature == current_feature
-        puts "  #{scenario_outline.title}"
-        @current_feature = feature
-      end
-
-      private
-
-      attr_reader :current_feature
+  class PrettyPrinter
+    def executable_scenario(executable)
+      feature, scenario = executable.feature, executable.scenario
+      puts feature.title unless feature == current_feature
+      puts "  #{scenario.title}"
+      @current_feature = feature
     end
 
-    def initialize
-      @pretty_printer = PrettyPrinter.new
-      @total_failed = 0
-      @total_passed = 0
+    def executable_examples_table_row(executable)
+      feature, scenario_outline = executable.feature, executable.scenario_outline
+      puts feature.title unless feature == current_feature
+      puts "  #{scenario_outline.title}"
+      @current_feature = feature
     end
 
-    def passed(executable)
-      executable.describe_to(@pretty_printer)
-      @total_passed += 1
-    end
-
-    def failed(executable)
-      executable.describe_to(@pretty_printer)
-      @total_failed += 1
-    end
-
-    def summarise
+    def summary(total_passed, total_failed)
+      total = total_passed + total_failed
       puts "#{total} scenarios run. #{total_passed} passed, #{total_failed} failed"
     end
 
     private
 
-    attr_reader :total_passed, :total_failed
+    attr_reader :current_feature
+  end
 
-    def total
-      total_failed + total_passed
+  class PrettyConsoleReport
+    def initialize(printer)
+      @printer = printer
+      @total_failed = 0
+      @total_passed = 0
     end
 
+    def passed(executable)
+      executable.describe_to(@printer)
+      @total_passed += 1
+    end
+
+    def failed(executable)
+      executable.describe_to(@printer)
+      @total_failed += 1
+    end
+
+    def summarise
+      @printer.summary(total_passed, total_failed)
+    end
+
+    private
+
+    attr_reader :total_passed, :total_failed
   end
 
-  reporter = PrettyConsoleReporter.new
+  report = PrettyConsoleReport.new(PrettyPrinter.new)
   compiler = Compiler.new do |executable|
-    executable.execute(reporter)
+    executable.execute(report)
   end
-
-  features.each do |feature|
+  files = Dir['features/docs/**/*.feature']
+  files.each do |path|
+    feature = FeatureFile.new(path).parse([], {})
     feature.describe_to(compiler)
   end
-  reporter.summarise
+  report.summarise
+
 end

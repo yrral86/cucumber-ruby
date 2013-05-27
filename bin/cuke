@@ -11,13 +11,176 @@ module Cucumber
     FeatureFile.new(path).parse([], {})
   end
 
-  class ConsoleUI
+
+  module Executable
+    class Base
+      def execute(reporter)
+        run_steps
+        send_result_to reporter
+      end
+
+      private
+
+      def send_result_to(reporter)
+        if passed?
+          reporter.passed(self)
+        else
+          reporter.failed(self)
+        end
+      end
+
+    end
+
+    class Scenario < Base
+      attr_reader :feature, :background, :scenario
+
+      def initialize(feature, background, scenario)
+        @feature, @background, @scenario = feature, background, scenario
+      end
+
+      def describe_to(printer)
+        printer.executable_scenario(self)
+      end
+
+      def passed?
+        true # TODO
+      end
+
+      private
+
+      def run_steps
+        # noop for now. TODO
+      end
+
+    end
+
+    class ExamplesTableRow < Base
+      attr_reader :feature, :background, :scenario_outline
+
+      def initialize(feature, background, scenario_outline, examples_table, examples_table_row)
+        @feature, @background, @scenario_outline = feature, background, scenario_outline
+      end
+
+      def passed?
+        false
+      end
+
+      def describe_to(printer)
+        printer.executable_examples_table_row(self)
+      end
+
+
+      private
+
+      def run_steps
+        # noop, for now. TODO
+      end
+
+    end
   end
 
-  printer = ConsoleUI.new
+  # Walks the AST and emits Executables
+  # from scenarios or example table rows
+  class Compiler
+    def initialize(&on_executable)
+      @on_executable = on_executable
+    end
 
-  executables = features.map { |feature| feature.executables }.flatten
-  executables.each do |executable|
-    executable.execute(printer)
+    def feature(feature)
+      @current_feature = feature
+      yield
+    end
+
+    def background(background)
+      @current_background = background
+      yield
+    end
+
+    def scenario_outline(scenario_outline)
+      @current_scenario_outline = scenario_outline
+      yield
+    end
+
+    def examples_table(examples_table)
+      @current_examples_table = examples_table
+      yield
+    end
+
+    def examples_table_row(examples_table_row)
+      new_executable Executable::ExamplesTableRow.new(current_feature, current_background, current_scenario_outline, current_examples_table, examples_table_row)
+    end
+
+    def scenario(scenario)
+      new_executable Executable::Scenario.new(current_feature, current_background, scenario)
+    end
+
+    private
+
+    def new_executable(executable)
+      @on_executable.call(executable)
+    end
+
+    attr_reader :current_feature, :current_background, :current_scenario_outline, :current_examples_table
   end
+
+  class PrettyConsoleReporter
+    class PrettyPrinter
+      def executable_scenario(executable)
+        feature, scenario = executable.feature, executable.scenario
+        puts feature.title unless feature == current_feature
+        puts "  #{scenario.title}"
+        @current_feature = feature
+      end
+
+      def executable_examples_table_row(executable)
+        feature, scenario_outline = executable.feature, executable.scenario_outline
+        puts feature.title unless feature == current_feature
+        puts "  #{scenario_outline.title}"
+        @current_feature = feature
+      end
+
+      private
+
+      attr_reader :current_feature
+    end
+
+    def initialize
+      @pretty_printer = PrettyPrinter.new
+      @total_failed = 0
+      @total_passed = 0
+    end
+
+    def passed(executable)
+      executable.describe_to(@pretty_printer)
+      @total_passed += 1
+    end
+
+    def failed(executable)
+      executable.describe_to(@pretty_printer)
+      @total_failed += 1
+    end
+
+    def summarise
+      puts "#{total} scenarios run. #{total_passed} passed, #{total_failed} failed"
+    end
+
+    private
+
+    attr_reader :total_passed, :total_failed
+
+    def total
+      total_failed + total_passed
+    end
+
+  end
+
+  reporter = PrettyConsoleReporter.new
+  compiler = Compiler.new do |executable|
+    executable.execute(reporter)
+  end
+
+  features.each do |feature|
+    feature.describe_to(compiler)
+  end
+  reporter.summarise
 end

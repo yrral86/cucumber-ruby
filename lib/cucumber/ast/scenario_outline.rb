@@ -35,6 +35,18 @@ module Cucumber
         attach_steps(@raw_steps)
       end
 
+      def describe_to(visitor)
+        visitor.scenario_outline(self) do
+          children.each do |child|
+            child.describe_to(visitor)
+          end
+        end
+      end
+
+      def children
+        examples_array
+      end
+
       def accept(visitor)
         background.accept(visitor)
         raise_missing_examples_error unless @example_sections

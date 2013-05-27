@@ -18,6 +18,18 @@ module Cucumber
         @gherkin_statement ||= statement
       end
 
+      def describe_to(visitor)
+        visitor.examples_table(self) do
+          children.each do |child|
+            child.describe_to(visitor)
+          end
+        end
+      end
+
+      def children
+        @outline_table.cells_rows[1..-1]
+      end
+
       def accept(visitor)
         visitor.visit_examples(self) do
           comment.accept(visitor)

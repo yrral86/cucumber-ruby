@@ -11,7 +11,7 @@ module Cucumber
 
       attr_accessor :language
       attr_reader :feature_elements
-      attr_reader :comment, :background, :tags
+      attr_reader :comment, :background, :tags, :keyword
 
       def initialize(location, background, comment, tags, keyword, title, description, feature_elements)
         @background, @comment, @tags, @keyword, @title, @description, @feature_elements = background, comment, tags, keyword, title, description, feature_elements
@@ -29,11 +29,23 @@ module Cucumber
         units.inject(0) { |total, unit| total += unit.step_count }
       end
 
+      def describe_to(visitor)
+        visitor.feature(self) do
+          children.each do |child|
+            child.describe_to(visitor)
+          end
+        end
+      end
+
+      def children
+        [background] + @feature_elements
+      end
+
       def accept(visitor)
         visitor.visit_feature(self) do
           comment.accept(visitor)
           tags.accept(visitor)
-          visitor.visit_feature_name(@keyword, indented_name)
+          visitor.visit_feature_name(keyword, indented_name)
           @feature_elements.each do |feature_element|
             feature_element.accept(visitor)
           end

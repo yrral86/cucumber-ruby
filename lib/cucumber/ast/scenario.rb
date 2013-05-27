@@ -21,6 +21,18 @@ module Cucumber
         attach_steps(@raw_steps)
       end
 
+      def describe_to(visitor)
+        visitor.scenario(self) do
+          children.each do |child|
+            child.describe_to(visitor)
+          end
+        end
+      end
+
+      def children
+        []
+      end
+
       def accept(visitor)
         background.accept(visitor)
         visitor.visit_feature_element(self) do

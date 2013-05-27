@@ -25,6 +25,9 @@ module Cucumber
       def init
       end
 
+      def describe_to(visitor)
+      end
+
       def accept(visitor)
       end
     end

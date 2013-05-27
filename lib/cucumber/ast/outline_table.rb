@@ -82,6 +82,18 @@ module Cucumber
           end
         end
 
+        def describe_to(visitor)
+          visitor.examples_table_row(self) do
+            children.each do |child|
+              child.describe_to(visitor)
+            end
+          end
+        end
+
+        def children
+          []
+        end
+
         def accept(visitor)
           if visitor.configuration.expand? 
             accept_expand(visitor) 

@@ -16,8 +16,8 @@ module Cucumber
           "✓"
         end
 
-        def passed?
-          true
+        def report(reportable, reporter)
+          reporter.passed(reportable)
         end
       end.new
 
@@ -26,8 +26,8 @@ module Cucumber
           "✗"
         end
 
-        def passed?
-          false
+        def report(reportable, reporter)
+          reporter.failed(reportable)
         end
       end.new
     end
@@ -40,18 +40,10 @@ module Cucumber
         send_result_to reporter
       end
 
-      def passed?
-        result.passed?
-      end
-
       private
 
       def send_result_to(reporter)
-        if passed?
-          reporter.passed(self)
-        else
-          reporter.failed(self)
-        end
+        result.report(self, reporter)
       end
 
     end
@@ -164,11 +156,7 @@ module Cucumber
     private
 
     def color(result, text)
-      if result.passed?
-        passed(text)
-      else
-        failed(text)
-      end
+      result.report(text, self)
     end
 
     attr_reader :current_feature

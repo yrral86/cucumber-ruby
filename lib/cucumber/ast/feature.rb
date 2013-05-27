@@ -40,6 +40,10 @@ module Cucumber
         end
       end
 
+      def executables
+        units
+      end
+
       def indented_name
         indent = ""
         name.split("\n").map do |l|

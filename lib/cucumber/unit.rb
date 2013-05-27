@@ -7,5 +7,8 @@ module Cucumber
     def step_count
       @step_collection.length
     end
+
+    def execute(ui)
+    end
   end
 end

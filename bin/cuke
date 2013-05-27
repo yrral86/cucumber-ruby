@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+$: << File.dirname(__FILE__) + '/../lib'
+
+require 'cucumber/platform'
+require 'cucumber/ast'
+
+module Cucumber
+  files = Dir['features/docs/**/*.feature']
+  require 'cucumber/feature_file'
+  features = files.map do |path|
+    FeatureFile.new(path).parse([], {})
+  end
+
+  class ConsoleUI
+  end
+
+  printer = ConsoleUI.new
+
+  executables = features.map { |feature| feature.executables }.flatten
+  executables.each do |executable|
+    executable.execute(printer)
+  end
+end

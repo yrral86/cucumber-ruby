@@ -5,6 +5,7 @@ $: << File.dirname(__FILE__) + '/../lib'
 require 'cucumber/platform'
 require 'cucumber/ast'
 require 'cucumber/feature_file'
+require 'cucumber/formatter/ansicolor'
 
 module Cucumber
 
@@ -139,17 +140,19 @@ module Cucumber
   end
 
   class PrettyPrinter
+    include Cucumber::Formatter::ANSIColor
+
     def executable_scenario(executable)
       feature, scenario = executable.feature, executable.scenario
       puts feature.title unless feature == current_feature
-      puts "  #{executable.result} #{scenario}"
+      puts color(executable.result, "  #{executable.result} #{scenario}")
       @current_feature = feature
     end
 
     def executable_examples_table_row(executable)
       feature, scenario_outline = executable.feature, executable.scenario_outline
       puts feature.title unless feature == current_feature
-      puts "  #{executable.result} #{scenario_outline}"
+      puts color(executable.result, "  #{executable.result} #{scenario_outline}")
       @current_feature = feature
     end
 
@@ -159,6 +162,14 @@ module Cucumber
     end
 
     private
+
+    def color(result, text)
+      if result.passed?
+        passed(text)
+      else
+        failed(text)
+      end
+    end
 
     attr_reader :current_feature
   end

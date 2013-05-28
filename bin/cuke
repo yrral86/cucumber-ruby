@@ -33,18 +33,16 @@ module Cucumber
     end
 
     class Base
-      attr_reader :result
 
       def execute(report)
+        report.before_scenario(self)
         run_steps
-        send_result_to report
+        report.after_scenario(self, result)
       end
 
       private
 
-      def send_result_to(report)
-        result.describe_to(report, self)
-      end
+      attr_reader :result
 
     end
 
@@ -55,8 +53,8 @@ module Cucumber
         @feature, @background, @scenario = feature, background, scenario
       end
 
-      def describe_to(printer)
-        printer.executable_scenario(self)
+      def describe_to(visitor, *args)
+        visitor.executable_scenario(self, *args)
       end
 
       private
@@ -74,14 +72,14 @@ module Cucumber
         @feature, @background, @scenario_outline = feature, background, scenario_outline
       end
 
-      def describe_to(printer)
-        printer.executable_examples_table_row(self)
+      def describe_to(visitor, *args)
+        visitor.executable_examples_table_row(self, *args)
       end
 
       private
 
       def run_steps
-        @result = Result::Failed
+        @result = Result::Failed # TODO
       end
 
     end
@@ -134,26 +132,27 @@ module Cucumber
   class PrettyPrinter
     include Cucumber::Formatter::ANSIColor
 
-    def executable_scenario(executable)
-      feature, scenario = executable.feature, executable.scenario
-      puts feature.title unless feature == current_feature
-      puts color(executable.result, "  #{executable.result} #{scenario}")
-      @current_feature = feature
+    def executable_scenario(scenario, result)
+      feature, scenario = scenario.feature, scenario.scenario
+      print_scenario_result(feature, scenario.to_s, result)
     end
 
-    def executable_examples_table_row(executable)
-      feature, scenario_outline = executable.feature, executable.scenario_outline
-      puts feature.title unless feature == current_feature
-      puts color(executable.result, "  #{executable.result} #{scenario_outline}")
-      @current_feature = feature
+    def executable_examples_table_row(example, result)
+      feature, scenario_outline = example.feature, example.scenario_outline
+      print_scenario_result(feature, scenario_outline.to_s, result)
     end
 
-    def summary(total_passed, total_failed)
-      total = total_passed + total_failed
-      puts "#{total} scenarios run. #{total_passed} passed, #{total_failed} failed"
+    def print(message)
+      puts message
     end
 
     private
+
+    def print_scenario_result(feature, name, result)
+      puts feature.title unless feature == current_feature
+      puts color(result, "  #{result} #{name}")
+      @current_feature = feature
+    end
 
     def color(result, text)
       result.describe_to(self, text)
@@ -165,30 +164,48 @@ module Cucumber
   class PrettyConsoleReport
     def initialize(printer)
       @printer = printer
-      @total_failed = 0
-      @total_passed = 0
     end
 
-    def passed(executable)
-      executable.describe_to(@printer)
-      @total_passed += 1
+    def before_scenarios
+      @summary = ScenarioResultSummary.new
     end
 
-    def failed(executable)
-      executable.describe_to(@printer)
-      @total_failed += 1
+    def before_scenario(scenario)
     end
 
-    def summarise
-      @printer.summary(total_passed, total_failed)
+    def after_scenario(scenario, result)
+      scenario.describe_to(@printer, result)
+      result.describe_to(@summary)
     end
 
-    private
+    def after_scenarios
+      @printer.print(@summary.to_s)
+    end
 
-    attr_reader :total_passed, :total_failed
+    class ScenarioResultSummary
+      def initialize
+        @total_failed = 0
+        @total_passed = 0
+      end
+
+      def passed(*args)
+        @total_passed += 1
+      end
+
+      def failed(*args)
+        @total_failed += 1
+      end
+
+      def to_s
+        total = @total_passed + @total_failed
+        "#{total} scenarios run. #{@total_passed} passed, #{@total_failed} failed"
+      end
+    end
+
   end
 
   report = PrettyConsoleReport.new(PrettyPrinter.new)
+  report.before_scenarios
   compiler = Compiler.new do |executable|
     executable.execute(report)
   end
@@ -197,6 +214,6 @@ module Cucumber
     feature = FeatureFile.new(path).parse([], {})
     feature.describe_to(compiler)
   end
-  report.summarise
+  report.after_scenarios
 
 end

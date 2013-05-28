@@ -132,6 +132,10 @@ module Cucumber
   class PrettyPrinter
     include Cucumber::Formatter::ANSIColor
 
+    def before_scenario(scenario)
+      print_feature_name(scenario.feature)
+    end
+
     def executable_scenario(scenario, result)
       feature, scenario = scenario.feature, scenario.scenario
       print_scenario_result(feature, scenario.to_s, result)
@@ -148,10 +152,15 @@ module Cucumber
 
     private
 
-    def print_scenario_result(feature, name, result)
-      puts feature.title unless feature == current_feature
-      puts color(result, "  #{result} #{name}")
+    def print_feature_name(feature)
+      return if feature == current_feature
       @current_feature = feature
+      puts
+      puts "  #{feature.title}"
+    end
+
+    def print_scenario_result(feature, name, result)
+      puts color(result, "    #{result} #{name}")
     end
 
     def color(result, text)
@@ -171,6 +180,7 @@ module Cucumber
     end
 
     def before_scenario(scenario)
+      @printer.before_scenario(scenario)
     end
 
     def after_scenario(scenario, result)

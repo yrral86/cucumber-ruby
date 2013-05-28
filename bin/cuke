@@ -8,46 +8,54 @@ require 'cucumber/feature_file'
 require 'cucumber/formatter/ansicolor'
 
 module Cucumber
+  module Result
+    class Passed
+      def to_s
+        "✓"
+      end
 
-  module Executable
-    module Result
-      Passed = Class.new do
-        def to_s
-          "✓"
-        end
-
-        def describe_to(visitor, *args)
-          visitor.passed(*args)
-        end
-      end.new
-
-      Failed = Class.new do
-        def to_s
-          "✗"
-        end
-
-        def describe_to(visitor, *args)
-          visitor.failed(*args)
-        end
-      end.new
+      def describe_to(visitor, *args)
+        visitor.passed(*args)
+      end
     end
 
-    class Base
+    class Failed
+      def to_s
+        "✗"
+      end
 
-      def execute(report)
-        report.before_scenario(self)
-        run_steps
-        report.after_scenario(self, result)
+      def describe_to(visitor, *args)
+        visitor.failed(*args)
+      end
+    end
+  end
+
+  module Executable
+    class Step
+      attr_reader :result
+
+      def initialize(step)
+        @step = step
+      end
+
+      def execute(runtime, configuration, report)
+        report.before_step(step)
+        step_match = runtime.step_match(step.name)
+        step_match.invoke(step.multiline_arg)
+        self.result = Result::Passed.new
+      rescue => e
+        self.result = Result::Failed.new
+      ensure
+        report.after_step(step, result)
       end
 
       private
 
-      attr_reader :result
-
+      attr_reader :step
+      attr_writer :result
     end
 
-    class Scenario < Base
-      attr_reader :feature, :background, :scenario
+    class Scenario
 
       def initialize(feature, background, scenario)
         @feature, @background, @scenario = feature, background, scenario
@@ -57,15 +65,43 @@ module Cucumber
         visitor.executable_scenario(self, *args)
       end
 
-      private
-
-      def run_steps
-        @result = Result::Passed # TODO
+      def execute(runtime, configuration, report)
+        report.before_scenario(feature, scenario)
+        runtime.before(scenario)
+        steps.each do |step|
+          execute_step(runtime, configuration, report, step)
+        end
+        runtime.after(scenario)
+        report.after_scenario(self, result)
       end
 
+      def failed
+        @result = Result::Failed.new
+      end
+
+      def passed
+        @result = Result::Passed.new
+      end
+
+      private
+
+      attr_reader :result, :feature, :background, :scenario
+
+      def execute_step(runtime, configuration, report, step)
+        step.execute(runtime, configuration, report)
+        step.result.describe_to(self)
+      end
+
+      def steps
+        return @steps if @steps
+        steps = background.raw_steps + scenario.raw_steps
+        @steps ||= steps.map do |step|
+          Executable::Step.new(step)
+        end
+      end
     end
 
-    class ExamplesTableRow < Base
+    class ExamplesTableRow
       attr_reader :feature, :background, :scenario_outline
 
       def initialize(feature, background, scenario_outline, examples_table, examples_table_row)
@@ -76,10 +112,12 @@ module Cucumber
         visitor.executable_examples_table_row(self, *args)
       end
 
-      private
+      def execute(*args)
+        # noop
+      end
 
-      def run_steps
-        @result = Result::Failed # TODO
+      def result
+        Result::Failed.new
       end
 
     end
@@ -129,21 +167,28 @@ module Cucumber
     attr_reader :current_feature, :current_background, :current_scenario_outline, :current_examples_table
   end
 
+  require 'ansi' # gem install ansi
   class PrettyPrinter
     include Cucumber::Formatter::ANSIColor
 
-    def before_scenario(scenario)
-      print_feature_name(scenario.feature)
+    def feature(feature)
+      print_feature_name(feature)
     end
 
-    def executable_scenario(scenario, result)
-      feature, scenario = scenario.feature, scenario.scenario
-      print_scenario_result(feature, scenario.to_s, result)
+    def scenario(scenario)
+      puts
+      puts "  #{scenario.title}"
     end
 
-    def executable_examples_table_row(example, result)
-      feature, scenario_outline = example.feature, example.scenario_outline
-      print_scenario_result(feature, scenario_outline.to_s, result)
+    def step(step, result=nil)
+      indent = "    "
+      unless result
+        print indent + grey(format_step(step))
+      else
+        print ANSI::Code.up +
+          indent +
+          result.describe_to(self, "#{result} #{format_step(step)}")
+      end
     end
 
     def print(message)
@@ -151,6 +196,10 @@ module Cucumber
     end
 
     private
+
+    def format_step(step)
+      "#{step.keyword}#{step.name}"
+    end
 
     def print_feature_name(feature)
       return if feature == current_feature
@@ -179,12 +228,20 @@ module Cucumber
       @summary = ScenarioResultSummary.new
     end
 
-    def before_scenario(scenario)
-      @printer.before_scenario(scenario)
+    def before_scenario(feature, scenario)
+      scenario.feature.describe_to(@printer)
+      scenario.describe_to(@printer)
+    end
+
+    def before_step(step)
+      step.describe_to(@printer)
+    end
+
+    def after_step(step, result)
+      step.describe_to(@printer, result)
     end
 
     def after_scenario(scenario, result)
-      scenario.describe_to(@printer, result)
       result.describe_to(@summary)
     end
 
@@ -214,10 +271,18 @@ module Cucumber
 
   end
 
+  require 'cucumber/runtime'
+  require 'cucumber'
+  runtime = Cucumber::Runtime.new
+  runtime.load_programming_language('rb')
+  runtime.support_code.load_files!(Dir['features/**/*.rb'])
+
   report = PrettyConsoleReport.new(PrettyPrinter.new)
   report.before_scenarios
+
+  configuration = Cucumber::Configuration.new
   compiler = Compiler.new do |executable|
-    executable.execute(report)
+    executable.execute(runtime, configuration, report)
   end
   files = Dir['features/docs/**/*.feature']
   files.each do |path|

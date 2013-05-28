@@ -58,6 +58,10 @@ module Cucumber
         end
       end
 
+      def describe_to(visitor, *args)
+        visitor.step(self, *args)
+      end
+
       def first_match(visitor)
         # feature_element is always a ScenarioOutline in this case
         feature_element.each_example_row do |cells|

@@ -108,6 +108,14 @@ module Cucumber
         @step_invocation ||= @background.create_step_invocations(my_step_invocations)
       end
 
+      def executable_steps
+        step_invocations
+      end
+
+      def all_steps
+        background.raw_steps + @raw_steps
+      end
+
       private
 
       def steps

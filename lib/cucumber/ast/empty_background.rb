@@ -30,6 +30,10 @@ module Cucumber
 
       def accept(visitor)
       end
+
+      def raw_steps
+        []
+      end
     end
   end
 end

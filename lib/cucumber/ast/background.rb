@@ -121,6 +121,10 @@ module Cucumber
         source_tags.map { |tag| tag.name }
       end
 
+      def raw_steps
+        @raw_steps
+      end
+
       private
 
       def steps

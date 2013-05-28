@@ -16,8 +16,8 @@ module Cucumber
           "✓"
         end
 
-        def report(reportable, reporter)
-          reporter.passed(reportable)
+        def describe_to(visitor, *args)
+          visitor.passed(*args)
         end
       end.new
 
@@ -26,8 +26,8 @@ module Cucumber
           "✗"
         end
 
-        def report(reportable, reporter)
-          reporter.failed(reportable)
+        def describe_to(visitor, *args)
+          visitor.failed(*args)
         end
       end.new
     end
@@ -35,15 +35,15 @@ module Cucumber
     class Base
       attr_reader :result
 
-      def execute(reporter)
+      def execute(report)
         run_steps
-        send_result_to reporter
+        send_result_to report
       end
 
       private
 
-      def send_result_to(reporter)
-        result.report(self, reporter)
+      def send_result_to(report)
+        result.describe_to(report, self)
       end
 
     end
@@ -156,7 +156,7 @@ module Cucumber
     private
 
     def color(result, text)
-      result.report(text, self)
+      result.describe_to(self, text)
     end
 
     attr_reader :current_feature

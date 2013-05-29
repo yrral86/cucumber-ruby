@@ -20,8 +20,14 @@ module Cucumber
     end
 
     class Failed
+      attr_reader :exception
+
+      def initialize(exception)
+        @exception = exception
+      end
+
       def to_s
-        "✗"
+        "✗ (#{@exception.message})"
       end
 
       def describe_to(visitor, *args)
@@ -30,7 +36,19 @@ module Cucumber
     end
   end
 
-  module Executable
+  module Testable
+    def self.new_scenario(*args)
+      Scenario.new(*args)
+    end
+
+    def self.new_examples_table_row(*args)
+      ExamplesTableRow.new(*args)
+    end
+
+    def self.new_step(*args)
+      Step.new(*args)
+    end
+
     class Step
       attr_reader :result
 
@@ -38,15 +56,16 @@ module Cucumber
         @step = step
       end
 
-      def execute(runtime, configuration, report)
+      def execute(runtime, report, result_listener)
         report.before_step(step)
         step_match = runtime.step_match(step.name)
         step_match.invoke(step.multiline_arg)
         self.result = Result::Passed.new
       rescue => e
-        self.result = Result::Failed.new
+        self.result = Result::Failed.new(e)
       ensure
         report.after_step(step, result)
+        result.describe_to(result_listener, step, result)
       end
 
       private
@@ -61,25 +80,29 @@ module Cucumber
         @feature, @background, @scenario = feature, background, scenario
       end
 
-      def describe_to(visitor, *args)
-        visitor.executable_scenario(self, *args)
+      def describe_source_to(visitor, *args)
+        scenario.describe_to(visitor, *args)
       end
 
-      def execute(runtime, configuration, report)
-        report.before_scenario(feature, scenario)
-        runtime.before(scenario)
-        steps.each do |step|
-          execute_step(runtime, configuration, report, step)
+      def describe_result_to(visitor, *args)
+        result.describe_to(visitor, *args)
+      end
+
+      def execute(runtime, report)
+        report.before_test(self)
+        runtime.with_hooks(scenario) do
+          steps.each do |step|
+            execute_step(runtime, report, step)
+          end
         end
-        runtime.after(scenario)
-        report.after_scenario(self, result)
+        report.after_test(self)
       end
 
-      def failed
-        @result = Result::Failed.new
+      def failed(step, result)
+        @result = Result::Failed.new(result.exception)
       end
 
-      def passed
+      def passed(step, result)
         @result = Result::Passed.new
       end
 
@@ -87,16 +110,15 @@ module Cucumber
 
       attr_reader :result, :feature, :background, :scenario
 
-      def execute_step(runtime, configuration, report, step)
-        step.execute(runtime, configuration, report)
-        step.result.describe_to(self)
+      def execute_step(runtime, report, step)
+        step.execute(runtime, report, self)
       end
 
       def steps
         return @steps if @steps
         steps = background.raw_steps + scenario.raw_steps
         @steps ||= steps.map do |step|
-          Executable::Step.new(step)
+          Testable.new_step(step)
         end
       end
     end
@@ -123,11 +145,12 @@ module Cucumber
     end
   end
 
-  # Walks the AST and emits Executables
+  # Walks the AST and emits Tests
   # from scenarios or example table rows
   class Compiler
-    def initialize(&on_executable)
-      @on_executable = on_executable
+    def initialize(testable, &on_new_test_ready)
+      @on_new_test_ready = on_new_test_ready
+      @testable = testable
     end
 
     def feature(feature)
@@ -151,17 +174,27 @@ module Cucumber
     end
 
     def examples_table_row(examples_table_row)
-      new_executable Executable::ExamplesTableRow.new(current_feature, current_background, current_scenario_outline, current_examples_table, examples_table_row)
+      new_examples_table_row(current_feature, current_background, current_scenario_outline, current_examples_table, examples_table_row)
     end
 
     def scenario(scenario)
-      new_executable Executable::Scenario.new(current_feature, current_background, scenario)
+      new_scenario(current_feature, current_background, scenario)
     end
 
     private
 
-    def new_executable(executable)
-      @on_executable.call(executable)
+    attr_reader :testable
+
+    def new_examples_table_row(*args)
+      new_test_ready testable.new_examples_table_row(*args)
+    end
+
+    def new_scenario(*args)
+      new_test_ready testable.new_scenario(*args)
+    end
+
+    def new_test_ready(test)
+      @on_new_test_ready.call test
     end
 
     attr_reader :current_feature, :current_background, :current_scenario_outline, :current_examples_table
@@ -222,28 +255,31 @@ module Cucumber
       @printer = printer
     end
 
-    def before_scenarios
+    def before_tests
       @summary = ScenarioResultSummary.new
     end
 
-    def before_scenario(feature, scenario)
-      scenario.feature.describe_to(@printer)
-      scenario.describe_to(@printer)
+    # test is either a Testable::Scenario or a Testable::ExamplesTableRow
+    def before_test(test)
+      # call describe_to on the source AST node (Scenario or ExamplesTableRow)
+      test.describe_source_to(@printer)
     end
 
+    # step is the AST step
     def before_step(step)
       step.describe_to(@printer)
     end
 
+    # step is the AST step
     def after_step(step, result)
       step.describe_to(@printer, result)
     end
 
-    def after_scenario(scenario, result)
-      result.describe_to(@summary)
+    def after_test(test)
+      test.describe_result_to(@summary)
     end
 
-    def after_scenarios
+    def after_tests
       @printer.print(@summary.to_s)
     end
 
@@ -276,17 +312,17 @@ module Cucumber
   runtime.support_code.load_files!(Dir['features/**/*.rb'])
 
   report = PrettyConsoleReport.new(PrettyPrinter.new)
-  report.before_scenarios
 
-  configuration = Cucumber::Configuration.new
-  compiler = Compiler.new do |executable|
-    executable.execute(runtime, configuration, report)
+  compiler = Compiler.new(Testable) do |executable|
+    executable.execute(runtime, report)
   end
   files = Dir['features/docs/**/*.feature']
+
+  report.before_tests
   files.each do |path|
     feature = FeatureFile.new(path).parse([], {})
     feature.describe_to(compiler)
   end
-  report.after_scenarios
+  report.after_tests
 
 end

@@ -177,11 +177,12 @@ module Cucumber
 
     def scenario(scenario)
       puts
-      puts "  #{scenario.title}"
+      puts "    # #{grey(scenario.location)}"
+      puts "    #{scenario.keyword}: #{scenario.title}"
     end
 
     def step(step, result=nil)
-      indent = "    "
+      indent = "      "
       unless result
         print indent + grey(format_step(step))
       else
@@ -205,11 +206,8 @@ module Cucumber
       return if feature == current_feature
       @current_feature = feature
       puts
-      puts "  #{feature.title}"
-    end
-
-    def print_scenario_result(feature, name, result)
-      puts color(result, "    #{result} #{name}")
+      puts "  # #{grey(feature.location)}"
+      puts "  #{feature.keyword}: #{feature.title}"
     end
 
     def color(result, text)

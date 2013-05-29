@@ -19,6 +19,16 @@ module Cucumber
       end
     end
 
+    class Unknown
+      def to_s
+        "○"
+      end
+
+      def describe_to(visitor, *args)
+        visitor.unknown(*args)
+      end
+    end
+
     class Failed
       attr_reader :exception
 
@@ -75,31 +85,54 @@ module Cucumber
     end
 
     class Scenario
-
       def initialize(feature, background, scenario)
         @feature, @background, @scenario = feature, background, scenario
+        raise ArgumentError unless feature
+        raise ArgumentError unless background
+        raise ArgumentError unless scenario
+        @result = Result::Unknown.new
       end
 
-      def describe_source_to(visitor, *args)
-        scenario.describe_to(visitor, *args)
+      # begin runtime API
+      def language
+        scenario.language
       end
 
-      def describe_result_to(visitor, *args)
-        result.describe_to(visitor, *args)
+      def accept_hook?(hook)
+        scenario.accept_hook?(hook)
+      end
+
+      # this is how the runtime tell us a hook has failed
+      def fail!(exception)
+        mark_as_failed(exception)
+      end
+      # end runtime API
+
+      def describe_to(visitor, *args)
+        attributes = [
+          feature, 
+          background, 
+          scenario, 
+          result
+        ]
+        attributes.each do |attribute|
+          attribute.describe_to(visitor, *args)
+        end
       end
 
       def execute(runtime, report)
         report.before_test(self)
-        runtime.with_hooks(scenario) do
-          steps.each do |step|
-            execute_step(runtime, report, step)
+        # TODO: get the hooks from runtime and compile them into our list of steps
+        runtime.with_hooks(self) do
+          testable_steps.each do |testable_step|
+            testable_step.execute(runtime, report, self)
           end
         end
         report.after_test(self)
       end
 
       def failed(step, result)
-        @result = Result::Failed.new(result.exception)
+        mark_as_failed(result.exception)
       end
 
       def passed(step, result)
@@ -110,36 +143,49 @@ module Cucumber
 
       attr_reader :result, :feature, :background, :scenario
 
-      def execute_step(runtime, report, step)
-        step.execute(runtime, report, self)
+      def mark_as_failed(exception)
+        @result = Result::Failed.new(exception)
       end
 
-      def steps
-        return @steps if @steps
-        steps = background.raw_steps + scenario.raw_steps
-        @steps ||= steps.map do |step|
+      def testable_steps
+        return @testable_steps if @testable_steps
+        raw_steps = background.raw_steps + scenario.raw_steps
+        @testable_steps ||= raw_steps.map do |step|
           Testable.new_step(step)
         end
       end
     end
 
     class ExamplesTableRow
-      attr_reader :feature, :background, :scenario_outline
+      attr_reader :feature, :background, :scenario_outline, :examples_table, :examples_table_row
 
       def initialize(feature, background, scenario_outline, examples_table, examples_table_row)
-        @feature, @background, @scenario_outline = feature, background, scenario_outline
+        @feature, @background, @scenario_outline, @examples_table, @examples_table_row = \
+          feature, background, scenario_outline, examples_table, examples_table_row
       end
 
       def describe_to(visitor, *args)
-        visitor.executable_examples_table_row(self, *args)
+        attributes = [
+          feature,
+          background,
+          scenario_outline,
+          examples_table,
+          examples_table_row,
+          result
+        ]
+        attributes.each do |attribute| 
+          attribute.describe_to(visitor, *args)
+        end
       end
 
-      def execute(*args)
+      def execute(runtime, report)
+        report.before_test(self)
         # noop
+        report.after_test(self)
       end
 
       def result
-        Result::Failed.new
+        Result::Failed.new(StandardError.new("Can't execute examples table rows yet"))
       end
 
     end
@@ -198,6 +244,9 @@ module Cucumber
     end
 
     attr_reader :current_feature, :current_background, :current_scenario_outline, :current_examples_table
+    def current_background
+      @current_background || Ast::EmptyBackground.new
+    end
   end
 
   require 'ansi' # gem install ansi
@@ -205,13 +254,36 @@ module Cucumber
     include Cucumber::Formatter::ANSIColor
 
     def feature(feature)
-      print_feature_name(feature)
+      for_new(:feature, feature) do
+        print_keyword feature, 1
+      end
+    end
+
+    def background(background)
+      for_new(:background, background) do
+        print_keyword background, 2
+      end
     end
 
     def scenario(scenario)
-      puts
-      puts "    # #{grey(scenario.location)}"
-      puts "    #{scenario.keyword}: #{scenario.title}"
+      print_keyword scenario, 2
+    end
+
+    def scenario_outline(scenario_outline)
+      for_new(:scenario_outline, scenario_outline) do
+        print_keyword scenario_outline, 2
+        # TODO: print steps
+      end
+    end
+
+    def examples_table(examples_table)
+      for_new(:examples_table, examples_table) do
+        print_keyword examples_table, 3
+      end
+    end
+
+    def examples_table_row(row)
+      puts row.to_s
     end
 
     def step(step, result=nil)
@@ -229,18 +301,27 @@ module Cucumber
       puts message
     end
 
+    def unknown
+    end
+
     private
+
+    def print_keyword(node, indent_size)
+      indent = ' ' * indent_size * 2
+      puts
+      puts "#{indent}# #{grey(node.location)}"
+      puts "#{indent}#{node.keyword}: #{node.title}"
+    end
 
     def format_step(step)
       "#{step.keyword}#{step.name}"
     end
 
-    def print_feature_name(feature)
-      return if feature == current_feature
-      @current_feature = feature
-      puts
-      puts "  # #{grey(feature.location)}"
-      puts "  #{feature.keyword}: #{feature.title}"
+    def for_new(node_type, value)
+      @current ||= {}
+      return if @current[node_type] == value
+      @current[node_type] = value
+      yield
     end
 
     def color(result, text)
@@ -262,7 +343,7 @@ module Cucumber
     # test is either a Testable::Scenario or a Testable::ExamplesTableRow
     def before_test(test)
       # call describe_to on the source AST node (Scenario or ExamplesTableRow)
-      test.describe_source_to(@printer)
+      test.describe_to(@printer)
     end
 
     # step is the AST step
@@ -276,7 +357,7 @@ module Cucumber
     end
 
     def after_test(test)
-      test.describe_result_to(@summary)
+      test.describe_to(@summary)
     end
 
     def after_tests
@@ -297,6 +378,17 @@ module Cucumber
         @total_failed += 1
       end
 
+      [
+        :feature,
+        :background,
+        :scenario,
+        :scenario_outline, 
+        :examples_table, 
+        :examples_table_row
+      ].each do |ignored_message|
+        define_method(ignored_message) { |*args| }
+      end
+
       def to_s
         total = @total_passed + @total_failed
         "#{total} scenarios run. #{@total_passed} passed, #{@total_failed} failed"
@@ -305,21 +397,25 @@ module Cucumber
 
   end
 
+  feature_files = Dir['features/docs/**/*.feature']
+  support_files = Dir['features/**/*.rb']
+  #feature_files = Dir["fixtures/self_test/features/outline_sample.feature"]
+  #support_files = Dir['fixtures/self_test/features/**/*.rb']
+
   require 'cucumber/runtime'
   require 'cucumber'
   runtime = Cucumber::Runtime.new
   runtime.load_programming_language('rb')
-  runtime.support_code.load_files!(Dir['features/**/*.rb'])
+  runtime.support_code.load_files!(support_files)
 
   report = PrettyConsoleReport.new(PrettyPrinter.new)
 
   compiler = Compiler.new(Testable) do |executable|
     executable.execute(runtime, report)
   end
-  files = Dir['features/docs/**/*.feature']
 
   report.before_tests
-  files.each do |path|
+  feature_files.each do |path|
     feature = FeatureFile.new(path).parse([], {})
     feature.describe_to(compiler)
   end

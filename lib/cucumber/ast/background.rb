@@ -9,7 +9,7 @@ module Cucumber
       include Names
       include HasLocation
       attr_accessor :feature
-      attr_accessor :comment
+      attr_accessor :comment, :keyword
 
       def initialize(language, location, comment, keyword, title, description, raw_steps)
         @language, @location, @comment, @keyword, @title, @description, @raw_steps = language, location, comment, keyword, title, description, raw_steps

@@ -191,82 +191,26 @@ module Cucumber
     end
   end
 
-  # Walks the AST and emits Tests
-  # from scenarios or example table rows
-  class Compiler
-    def initialize(testable, &on_new_test_ready)
-      @on_new_test_ready = on_new_test_ready
-      @testable = testable
-    end
-
-    def feature(feature)
-      @current_feature = feature
-      yield
-    end
-
-    def background(background)
-      @current_background = background
-      yield
-    end
-
-    def scenario_outline(scenario_outline)
-      @current_scenario_outline = scenario_outline
-      yield
-    end
-
-    def examples_table(examples_table)
-      @current_examples_table = examples_table
-      yield
-    end
-
-    def examples_table_row(examples_table_row)
-      new_examples_table_row(current_feature, current_background, current_scenario_outline, current_examples_table, examples_table_row)
-    end
-
-    def scenario(scenario)
-      new_scenario(current_feature, current_background, scenario)
-    end
-
-    private
-
-    attr_reader :testable
-
-    def new_examples_table_row(*args)
-      new_test_ready testable.new_examples_table_row(*args)
-    end
-
-    def new_scenario(*args)
-      new_test_ready testable.new_scenario(*args)
-    end
-
-    def new_test_ready(test)
-      @on_new_test_ready.call test
-    end
-
-    attr_reader :current_feature, :current_background, :current_scenario_outline, :current_examples_table
-    def current_background
-      @current_background || Ast::EmptyBackground.new
-    end
-  end
-
   require 'ansi' # gem install ansi
   class PrettyPrinter
     include Cucumber::Formatter::ANSIColor
 
-    def feature(feature)
+    def feature(feature, *)
       for_new(:feature, feature) do
         print_keyword feature, 1
       end
     end
 
-    def background(background)
+    def background(background, *)
       for_new(:background, background) do
         print_keyword background, 2
       end
     end
 
-    def scenario(scenario)
-      print_keyword scenario, 2
+    def scenario(scenario, *)
+      for_new(:scenario, scenario) do
+        print_keyword scenario, 2
+      end
     end
 
     def scenario_outline(scenario_outline)
@@ -286,17 +230,11 @@ module Cucumber
       yield
     end
 
-    def test_step(test_step, result=nil)
-      @result = result
-      yield self
-    end
-
     def examples_table_row(row)
       puts row.to_s
     end
 
     def step(step, result=nil)
-      result = @result
       indent = "      "
       unless result
         print indent + grey(format_step(step))
@@ -323,10 +261,6 @@ module Cucumber
       puts "#{indent}#{node.keyword}: #{node.title}"
     end
 
-    def format_step(step)
-      "#{step.keyword}#{step.name}"
-    end
-
     def for_new(node_type, value)
       @current ||= {}
       return if @current[node_type] == value
@@ -337,6 +271,11 @@ module Cucumber
     def color(result, text)
       result.describe_to(self, text)
     end
+
+    def format_step(step)
+      "#{step.keyword}#{step.name}"
+    end
+
 
     attr_reader :current_feature
   end
@@ -351,24 +290,20 @@ module Cucumber
       @summary = ScenarioResultSummary.new
     end
 
-    # test is either a Testable::Scenario or a Testable::ExamplesTableRow
-    def before_test_case(test)
-      # call describe_to on the source AST node (Scenario or ExamplesTableRow)
-      test.describe_to(@printer)
+    def before_test_case(test_case)
+      test_case.describe_to(@printer)
     end
 
-    # step is the AST step
     def before_test_step(step)
       step.describe_to(@printer)
     end
 
-    # step is the AST step
     def after_test_step(step, result)
       step.describe_to(@printer, result)
     end
 
     def after_test_case(test_case, result)
-      test_case.describe_to(@summary)
+      result.describe_to(@summary)
     end
 
     def after_test_suite
@@ -412,15 +347,8 @@ module Cucumber
   end
 
   feature_files = Dir['features/**/*.feature']
-  support_files = Dir['features/**/*.rb']
   #feature_files = Dir["fixtures/self_test/features/outline_sample.feature"]
   #support_files = Dir['fixtures/self_test/features/**/*.rb']
-
-  require 'cucumber/runtime'
-  require 'cucumber'
-  runtime = Cucumber::Runtime.new
-  runtime.load_programming_language('rb')
-  runtime.support_code.load_files!(support_files)
 
   report = PrettyConsoleReport.new(PrettyPrinter.new)
 
@@ -433,7 +361,20 @@ module Cucumber
 
   test_suite = compile(features)
 
+  require 'cucumber/runtime'
+  require 'cucumber'
   mappings = Class.new do
+    def support_files
+      Dir['features/**/*.rb']
+    end
+
+    def runtime
+      result = Cucumber::Runtime.new
+      result.load_programming_language('rb')
+      result.support_code.load_files!(support_files)
+      result
+    end
+
     def execute(step)
       step_match = runtime.step_match(step.name)
       step_match.invoke(step.multiline_arg)

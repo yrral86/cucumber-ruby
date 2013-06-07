@@ -110,9 +110,9 @@ module Cucumber
 
       def describe_to(visitor, *args)
         attributes = [
-          feature, 
-          background, 
-          scenario, 
+          feature,
+          background,
+          scenario,
           result
         ]
         attributes.each do |attribute|
@@ -173,7 +173,7 @@ module Cucumber
           examples_table_row,
           result
         ]
-        attributes.each do |attribute| 
+        attributes.each do |attribute|
           attribute.describe_to(visitor, *args)
         end
       end
@@ -282,11 +282,21 @@ module Cucumber
       end
     end
 
+    def test_case(*args)
+      yield
+    end
+
+    def test_step(test_step, result=nil)
+      @result = result
+      yield self
+    end
+
     def examples_table_row(row)
       puts row.to_s
     end
 
     def step(step, result=nil)
+      result = @result
       indent = "      "
       unless result
         print indent + grey(format_step(step))
@@ -334,33 +344,34 @@ module Cucumber
   class PrettyConsoleReport
     def initialize(printer)
       @printer = printer
+      @summary = ScenarioResultSummary.new
     end
 
-    def before_tests
+    def before_test_suite
       @summary = ScenarioResultSummary.new
     end
 
     # test is either a Testable::Scenario or a Testable::ExamplesTableRow
-    def before_test(test)
+    def before_test_case(test)
       # call describe_to on the source AST node (Scenario or ExamplesTableRow)
       test.describe_to(@printer)
     end
 
     # step is the AST step
-    def before_step(step)
+    def before_test_step(step)
       step.describe_to(@printer)
     end
 
     # step is the AST step
-    def after_step(step, result)
+    def after_test_step(step, result)
       step.describe_to(@printer, result)
     end
 
-    def after_test(test)
-      test.describe_to(@summary)
+    def after_test_case(test_case, result)
+      test_case.describe_to(@summary)
     end
 
-    def after_tests
+    def after_test_suite
       @printer.print(@summary.to_s)
     end
 
@@ -382,11 +393,14 @@ module Cucumber
         :feature,
         :background,
         :scenario,
-        :scenario_outline, 
-        :examples_table, 
+        :scenario_outline,
+        :examples_table,
         :examples_table_row
       ].each do |ignored_message|
         define_method(ignored_message) { |*args| }
+      end
+
+      def test_case(*)
       end
 
       def to_s
@@ -397,7 +411,7 @@ module Cucumber
 
   end
 
-  feature_files = Dir['features/docs/**/*.feature']
+  feature_files = Dir['features/**/*.feature']
   support_files = Dir['features/**/*.rb']
   #feature_files = Dir["fixtures/self_test/features/outline_sample.feature"]
   #support_files = Dir['fixtures/self_test/features/**/*.rb']
@@ -410,15 +424,21 @@ module Cucumber
 
   report = PrettyConsoleReport.new(PrettyPrinter.new)
 
-  compiler = Compiler.new(Testable) do |executable|
-    executable.execute(runtime, report)
+  require 'cucumber/core'
+  extend Cucumber::Core
+
+  features = feature_files.map do |file|
+    parse_gherkin File.read(file)
   end
 
-  report.before_tests
-  feature_files.each do |path|
-    feature = FeatureFile.new(path).parse([], {})
-    feature.describe_to(compiler)
-  end
-  report.after_tests
+  test_suite = compile(features)
 
+  mappings = Class.new do
+    def execute(step)
+      step_match = runtime.step_match(step.name)
+      step_match.invoke(step.multiline_arg)
+    end
+  end.new
+
+  execute(test_suite, mappings, report)
 end

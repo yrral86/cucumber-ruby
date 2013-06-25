@@ -167,7 +167,7 @@ module Cucumber
 
   end
 
-  feature_files = Dir['features/**/*.feature']
+  feature_files = Dir['features/**/*.feature'].reject { |f| f =~ /iso-8859-1/ }
   #feature_files = Dir["fixtures/self_test/features/outline_sample.feature"]
   #support_files = Dir['fixtures/self_test/features/**/*.rb']
 

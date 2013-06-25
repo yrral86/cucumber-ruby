@@ -13,6 +13,10 @@ module Cucumber
   class PrettyPrinter
     include Cucumber::Formatter::ANSIColor
 
+    def passed(x, *args)
+      super(*args)
+    end
+
     def feature(feature, *)
       for_new(:feature, feature) do
         print_keyword feature, 1
@@ -31,14 +35,14 @@ module Cucumber
       end
     end
 
-    def scenario_outline(scenario_outline)
+    def scenario_outline(scenario_outline, *)
       for_new(:scenario_outline, scenario_outline) do
         print_keyword scenario_outline, 2
         # TODO: print steps
       end
     end
 
-    def examples_table(examples_table)
+    def examples_table(examples_table, *)
       for_new(:examples_table, examples_table) do
         print_keyword examples_table, 3
       end
@@ -48,7 +52,7 @@ module Cucumber
       yield
     end
 
-    def examples_table_row(row)
+    def examples_table_row(row, *)
       puts row.to_s
     end
 
@@ -76,7 +80,7 @@ module Cucumber
       indent = ' ' * indent_size * 2
       puts
       puts "#{indent}# #{grey(node.location)}"
-      puts "#{indent}#{node.keyword}: #{node.title}"
+      puts "#{indent}#{node.keyword}: #{node.name}"
     end
 
     def for_new(node_type, value)
@@ -109,15 +113,14 @@ module Cucumber
     end
 
     def before_test_case(test_case)
-      test_case.describe_to(@printer)
     end
 
     def before_test_step(step)
-      step.describe_to(@printer)
+      step.describe_source_to(@printer)
     end
 
     def after_test_step(step, result)
-      step.describe_to(@printer, result)
+      step.describe_source_to(@printer, result)
     end
 
     def after_test_case(test_case, result)

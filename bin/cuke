@@ -120,7 +120,7 @@ module Cucumber
       @summary = ScenarioResultSummary.new
     end
 
-    def before_test_suite
+    def before_test_suite(test_suite)
       @summary = ScenarioResultSummary.new
     end
 
@@ -139,7 +139,7 @@ module Cucumber
       result.describe_to(@summary)
     end
 
-    def after_test_suite
+    def after_test_suite(test_suite, result)
       @printer.print(@summary.to_s)
     end
 

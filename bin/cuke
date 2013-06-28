@@ -13,10 +13,6 @@ module Cucumber
   class PrettyPrinter
     include Cucumber::Formatter::ANSIColor
 
-    def passed(x, *args)
-      super(*args)
-    end
-
     def feature(feature, *)
       for_new(:feature, feature) do
         print_keyword feature, 1
@@ -83,11 +79,15 @@ module Cucumber
       print super(text)
     end
 
-    private
+    def skipped(text)
+      print super(text)
+    end
 
     def passed(text)
       print super(text)
     end
+
+    private
 
     def print_keyword(node, indent_size)
       indent = ' ' * indent_size * 2

@@ -180,11 +180,8 @@ module Cucumber
   extend Cucumber::Core
 
   features = feature_files.map do |file|
-    parse_gherkin File.read(file)
+    File.read(file)
   end
-
-  puts "Compiling #{features.count} features..."
-  test_suite = compile(features)
 
   class PreRunSummary
     def initialize
@@ -192,8 +189,7 @@ module Cucumber
       @features = []
     end
 
-    def test_suite(*)
-      yield
+    def print
       puts
       puts "Compiler output:"
       puts "  #{@features.uniq.count} features"
@@ -225,7 +221,9 @@ module Cucumber
     end
   end
 
-  test_suite.describe_to(PreRunSummary.new)
+  pre_run_summary = PreRunSummary.new
+  compile(features, pre_run_summary)
+  pre_run_summary.print
 
   require 'cucumber/runtime'
   require 'cucumber'
@@ -248,5 +246,6 @@ module Cucumber
   end
 
   mappings = ClassicMappings.new
-  execute(test_suite, mappings, report)
+  puts "Executing #{features.count} features..."
+  execute(features, mappings, report)
 end

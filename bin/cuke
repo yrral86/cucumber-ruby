@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # encoding: UTF-8
 $: << File.dirname(__FILE__) + '/../lib'
+$: << File.dirname(__FILE__) + '/../../cucumber-ruby-core/lib'
 
 require 'cucumber/platform'
 require 'cucumber/ast'
@@ -114,14 +115,14 @@ module Cucumber
     attr_reader :current_feature
   end
 
+  require 'cucumber/core/test/result'
   class PrettyConsoleReport
     def initialize(printer)
       @printer = printer
-      @summary = ScenarioResultSummary.new
+      @summary = Cucumber::Core::Test::Result::Summary.new
     end
 
     def before_test_suite(test_suite)
-      @summary = ScenarioResultSummary.new
     end
 
     def before_test_case(test_case)
@@ -143,29 +144,6 @@ module Cucumber
       @printer.print(@summary.to_s)
     end
 
-    class ScenarioResultSummary
-      def initialize
-        @total_failed = 0
-        @total_passed = 0
-      end
-
-      def passed(*args)
-        @total_passed += 1
-      end
-
-      def failed(*args)
-        @total_failed += 1
-      end
-
-      def exception(*);end
-      def test_case(*);end
-
-      def to_s
-        total = @total_passed + @total_failed
-        "#{total} scenarios run. #{@total_passed} passed, #{@total_failed} failed"
-      end
-    end
-
   end
 
   features_glob = ARGV[0] || 'features/**/*.feature'
@@ -175,57 +153,12 @@ module Cucumber
 
   report = PrettyConsoleReport.new(PrettyPrinter.new)
 
-  $: << File.dirname(__FILE__) + '/../../cucumber-ruby-core/lib'
   require 'cucumber/core'
   extend Cucumber::Core
 
   features = feature_files.map do |file|
-    parse_gherkin File.read(file)
+    File.read(file)
   end
-
-  puts "Compiling #{features.count} features..."
-  test_suite = compile(features)
-
-  class PreRunSummary
-    def initialize
-      @test_cases = @test_steps = 0
-      @features = []
-    end
-
-    def test_suite(*)
-      yield
-      puts
-      puts "Compiler output:"
-      puts "  #{@features.uniq.count} features"
-      puts "  #{@test_cases} test cases"
-      puts "  #{@test_steps} steps"
-    end
-
-    def feature(feature, *)
-      @features << feature
-    end
-
-    def scenario(*)
-    end
-
-    def scenario_outline(*)
-    end
-
-    def examples_table(*)
-    end
-
-    def test_case(test_case, *)
-      @test_cases += 1
-      yield
-      test_case.describe_source_to(self)
-    end
-
-    def test_step(*)
-      @test_steps += 1
-    end
-  end
-
-  test_suite.describe_to(PreRunSummary.new)
 
   require 'cucumber/runtime'
   require 'cucumber'
@@ -242,11 +175,15 @@ module Cucumber
     end
 
     def execute(step)
+    end
+
+    def define(step, mapper)
       step_match = runtime.step_match(step.name)
-      step_match.invoke(step.multiline_arg)
+      mapper.define { step_match.invoke(step.multiline_arg) }
+    rescue Cucumber::Undefined
     end
   end
 
   mappings = ClassicMappings.new
-  execute(test_suite, mappings, report)
+  execute(features, mappings, report)
 end

@@ -58,14 +58,22 @@ module Cucumber
       unless result
         print indent + grey(format_step(step) + '...')
       else
-        result.describe_to(self, ANSI::Code.up + indent + "#{result} #{format_step(step)}")
+        result.describe_to(self, ANSI::Code.up + indent + "#{format_step(step)} #{result}")
       end
+    end
+
+    def hook(hook, result=nil)
+      return unless result
+      return unless result.is_a?(Core::Test::Result::Failed)
+      indent = "      "
+      result.describe_to(self, indent + "#{result} (hook)")
     end
 
     def exception(exception, *args)
       indent = "        "
       puts
       puts red(indent + exception.message)
+      puts red(exception.backtrace.join("\n"))
       puts
     end
 
@@ -168,19 +176,45 @@ module Cucumber
     end
 
     def runtime
+      return @runtime if @runtime
       result = Cucumber::Runtime.new
-      result.load_programming_language('rb')
+      @ruby = result.load_programming_language('rb')
       result.support_code.load_files!(support_files)
-      result
-    end
-
-    def execute(step)
+      @runtime = result
     end
 
     def define(step, mapper)
       step_match = runtime.step_match(step.name)
       mapper.define { step_match.invoke(step.multiline_arg) }
     rescue Cucumber::Undefined
+    end
+
+    def hooks(test_case, mapper)
+      scenario = Scenario.new(test_case)
+      ruby = @ruby
+      mapper.before do
+        ruby.begin_rb_scenario(scenario)
+      end
+      @ruby.hooks_for(:before, scenario).each do |hook|
+        mapper.before do
+          hook.invoke('location', scenario)
+        end
+      end
+    end
+
+    # adapts our test_case to look like the Cucumber Runtime's Scenario
+    class Scenario
+      def initialize(test_case)
+        @test_case = test_case
+      end
+
+      def accept_hook?(hook)
+        true
+      end
+
+      def language
+        @test_case.language
+      end
     end
   end
 

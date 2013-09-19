@@ -1,7 +1,6 @@
 require 'logger'
 require 'cucumber/cli/options'
 require 'cucumber/constantize'
-require 'gherkin/tag_expression'
 
 module Cucumber
   module Cli
@@ -25,7 +24,6 @@ module Cucumber
         @options.parse!(args)
         arrange_formats
         raise("You can't use both --strict and --wip") if strict? && wip?
-        @options[:tag_expression] = Gherkin::TagExpression.new(@options[:tag_expressions])
         set_environment_variables
       end
 
@@ -130,7 +128,7 @@ module Cucumber
       end
 
       def tag_expression
-        Gherkin::TagExpression.new(@options[:tag_expressions])
+        @options[:tag_expressions]
       end
 
       def filters

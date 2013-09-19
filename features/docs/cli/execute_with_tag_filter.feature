@@ -83,33 +83,6 @@ Feature: Tag logic
       1 step (1 undefined)
       """
 
-  Scenario: Run with limited tag count, blowing it on scenario
-     When I run `cucumber -q --no-source --dry-run --tags @one:1 features/test.feature`
-     Then it should fail with:
-       """
-       @one occurred 2 times, but the limit was set to 1
-         features/test.feature:5
-         features/test.feature:9
-       """
-
-   Scenario: Run with limited tag count, blowing it via feature inheritance
-     When I run `cucumber -q --no-source --dry-run --tags @feature:1 features/test.feature`
-     Then it should fail with:
-       """
-       @feature occurred 4 times, but the limit was set to 1
-         features/test.feature:5
-         features/test.feature:9
-         features/test.feature:13
-         features/test.feature:17
-       """
-
-   Scenario: Run with limited tag count using negative tag, blowing it via a tag that is not run
-     When I run `cucumber -q --no-source --dry-run --tags ~@one:1 features/test.feature`
-     Then it should fail with:
-       """
-       @one occurred 2 times, but the limit was set to 1
-       """
-
   Scenario: Limiting with tags which do not exist in the features
     Originally added to check [Lighthouse bug #464](https://rspec.lighthouseapp.com/projects/16211/tickets/464).
 

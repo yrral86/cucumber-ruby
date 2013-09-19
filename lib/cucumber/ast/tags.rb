@@ -1,5 +1,3 @@
-require 'gherkin/tag_expression'
-
 module Cucumber
   module Ast
     class Tags #:nodoc:

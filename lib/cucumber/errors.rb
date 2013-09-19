@@ -31,10 +31,4 @@ module Cucumber
       super(message)
     end
   end
-
-  class TagExcess < StandardError
-    def initialize(messages)
-      super(messages.join("\n"))
-    end
-  end
 end

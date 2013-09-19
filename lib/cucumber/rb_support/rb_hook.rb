@@ -2,11 +2,11 @@ module Cucumber
   module RbSupport
     # Wrapper for Before, After and AfterStep hooks
     class RbHook
-      attr_reader :tag_expressions
+      attr_reader :tag_expression
 
-      def initialize(rb_language, tag_expressions, proc)
+      def initialize(rb_language, tag_expression, proc)
         @rb_language = rb_language
-        @tag_expressions = tag_expressions
+        @tag_expression = tag_expression
         @proc = proc
       end
 

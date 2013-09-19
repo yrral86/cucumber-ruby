@@ -1,4 +1,4 @@
-## [In git master](https://github.com/cucumber/cucumber/compare/v1.3.2...master)
+## [In git master](https://github.com/cucumber/cucumber/compare/v1.3.6...master)
 
 ### Features removed
 

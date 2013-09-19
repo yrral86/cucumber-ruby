@@ -1,5 +1,6 @@
 require 'enumerator'
-require 'gherkin/tag_expression'
+require 'bool'
+require 'gherkin/legacy_tag_expression'
 
 module Cucumber
   module Ast
@@ -54,7 +55,14 @@ module Cucumber
       end
 
       def accept_hook?(hook)
-        Gherkin::TagExpression.new(hook.tag_expressions).evaluate(source_tags)
+        legacy_tag_expression = Gherkin::LegacyTagExpression.new(hook.tag_expression)
+        tag_expression = legacy_tag_expression.convert
+        if(tag_expression == "")
+          true
+        else
+          tag_expression = Bool.parse(legacy_tag_expression.convert)
+          Bool::Evaluator.new.evaluate(tag_expression, source_tag_names)
+        end
       end
 
       def source_tag_names

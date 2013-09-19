@@ -29,7 +29,7 @@ module Cucumber
         feature_file = FeatureFile.new(self.class.feature_filename, content)
         features = Ast::Features.new
         filters = []
-        feature = feature_file.parse(filters, {})
+        feature = feature_file.parse(filters)
         features.add_feature(feature) if feature
         features
       end

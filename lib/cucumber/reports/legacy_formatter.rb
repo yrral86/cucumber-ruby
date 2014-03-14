@@ -43,26 +43,20 @@ module Cucumber
         :puts
 
       attr_accessor :cursor
-      private       :cursor
-      def before_test_case(test_case, &continue)
-        features.before(formatter) unless already_running_features?
-        @cursor ||= Cursor.new(runtime, self)
+      private :cursor
 
-        cursor.accept(test_case, formatter) do |new_formatter|
-          @current_formatter = new_formatter
-          continue.call
-        end
+      def before_test_case(test_case, &continue)
+        continue.call
       end
 
       def before_test_step(test_step)
-        @current_step = Step.for(test_step, cursor)
-        test_step.describe_source_to(cursor)
+        test_step.describe_source_to(tree_builder)
+        puts tree
         self
       end
 
       def after_test_step(test_step, result)
-        cursor.result(result)
-        @current_step.accept(@current_formatter, result)
+        #tree.step_result(test_step, result)
         self
       end
 
@@ -71,24 +65,7 @@ module Cucumber
         self
       end
 
-      def new_feature(ast_feature)
-        @current_feature.after(formatter) if @current_feature
-        @current_feature = Feature.new(ast_feature)
-        @current_feature.before(formatter)
-      end
-
       def done
-        @current_feature.after(formatter)
-        @features.after(formatter)
-      end
-
-      def features
-        @running_features = true
-        @features ||= Features.new
-      end
-
-      def already_running_features?
-        !!@running_features
       end
 
       def record_test_case_result(test_case, result)
@@ -96,19 +73,80 @@ module Cucumber
         runtime.record_result(scenario)
       end
 
-      class Cursor
-        attr_reader :runtime, :features
-        private     :runtime, :features
-        def initialize(runtime, features)
-          @features = features
-          @runtime = runtime
+      def tree_builder
+        @tree_builder ||= TreeBuilder.new
+      end
+
+      def tree
+        @tree_builder.tree
+      end
+
+      class TreeBuilder
+        def tree
+          @tree ||= Tree.new(:no_feature)
         end
 
-        def accept(test_case, formatter, &block)
-          test_case.describe_source_to(self)
-          FeatureElement.new(@current_scenario, self).accept(formatter) do
-            Steps.new.accept(formatter, &block)
+        def hook(location)
+          p "hook"
+        end
+
+        def feature(feature, &continue)
+          p 'feature'
+          unless feature == tree.feature
+            @tree = Tree.new(feature)
           end
+          continue.call
+        end
+
+        def scenario(scenario, &continue)
+          p 'scenario'
+          unless scenario == tree.scenario
+            @tree = tree.with_scenario(scenario)
+          end
+          continue.call
+        end
+
+        def step(step, &continue)
+          @tree = tree.with_step(step)
+          continue.call
+        end
+      end
+
+      class Tree
+        include Cucumber.initializer(:feature)
+        attr_reader :feature
+
+        def with_scenario(scenario)
+          ScenarioTree.new(feature, scenario, [])
+        end
+
+        def scenario
+          :no_scenario
+        end
+
+        class ScenarioTree
+          include Cucumber.initializer(:feature, :scenario, :steps)
+          attr_reader :feature, :scenario
+
+          def with_scenario(scenario)
+            ScenarioTree.new(feature, scenario, [])
+          end
+
+          def with_step(step)
+            ScenarioTree.new(feature, scenario, steps + [step])
+          end
+        end
+      end
+
+      class Cursor
+        attr_reader :runtime, :current_scenario
+        private     :runtime
+        def initialize(runtime, test_case)
+          @runtime = runtime
+          test_case.describe_source_to(self)
+        end
+
+        def accept(formatter, &block)
         end
 
         def hook
@@ -119,13 +157,7 @@ module Cucumber
           self
         end
 
-        def feature(ast_feature, *args)
-          if @current_feature && @current_feature == ast_feature
-            #do nothing
-          else
-            @current_feature = ast_feature
-            features.new_feature(ast_feature)
-          end
+        def feature(feature, *args)
           self
         end
 
@@ -162,17 +194,15 @@ module Cucumber
       end
 
       class Features
-        def before(formatter)
+        def accept(formatter)
           timer.start
           formatter.before_features(nil)
-          self
-        end
 
-        def after(formatter)
+          yield if block_given?
+
           formatter.after_features(Legacy::Ast::Features.new(timer.sec))
           self
         end
-
         private
 
         def timer
@@ -181,19 +211,13 @@ module Cucumber
       end
 
       class Feature
-        attr_reader :ast_feature
-        def initialize(ast_feature)
-          @ast_feature = ast_feature
-        end
-
-        def before(formatter)
+        def accept(formatter)
           formatter.before_feature
           formatter.node(:tags, nil)
           formatter.feature_name
-          self
-        end
 
-        def after(formatter)
+          yield if block_given?
+
           formatter.after_feature
           self
         end
@@ -468,8 +492,8 @@ module Cucumber
         end
       end
 
-      # Printer to handle background steps for anything but the first scenario in a 
-      # feature. These steps should not be printed, but their results still need to 
+      # Printer to handle background steps for anything but the first scenario in a
+      # feature. These steps should not be printed, but their results still need to
       # be recorded.
       class HiddenBackgroundPrinter < Struct.new(:formatter, :runtime, :background)
         def step(step, result)

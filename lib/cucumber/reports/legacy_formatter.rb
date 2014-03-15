@@ -83,12 +83,12 @@ module Cucumber
 
       class TreeBuilder
         def tree
-          @tree ||= Tree.new(:no_feature)
+          @tree ||= Tree.new
         end
 
         def feature(feature)
           return if feature == tree.feature
-          @tree = Tree.new(feature)
+          @tree = tree.with_feature(feature)
         end
 
         def scenario(scenario)
@@ -106,105 +106,43 @@ module Cucumber
       end
 
       class Tree
-        include Cucumber.initializer(:feature)
-        attr_reader :feature
+        attr_reader :feature, :scenario
 
-        def with_scenario(scenario)
-          ScenarioTree.new(feature, scenario, [])
+        def initialize
+          @nodes = [Features.new]
         end
 
-        def with_hook(location)
+        def with_feature(feature)
+          @nodes << Feature.new
+          @feature = feature
+          self
+        end
+
+        def with_scenario(scenario)
+          @nodes << FeatureElement.new
+          @scenario = scenario
+          self
+        end
+
+        def with_hook(hook)
           # TODO
           self
         end
 
-        def scenario
-          :no_scenario
-        end
-
-        class ScenarioTree
-          include Cucumber.initializer(:feature, :scenario, :steps)
-          attr_reader :feature, :scenario
-
-          def with_scenario(scenario)
-            ScenarioTree.new(feature, scenario, [])
-          end
-
-          def with_step(step)
-            ScenarioTree.new(feature, scenario, steps + [step])
-          end
-
-          def with_hook(hook)
-            # TODO
-            self
-          end
-
-          def accept(formatter, continue)
-            Features.new.accept(formatter) do
-              Feature.new.accept(formatter) do
-                FeatureElement.new.accept(formatter, &continue)
-              end
-            end
-          end
-
-          def test_step(test_step, result)
-            # TODO - record result somewhere ready for when we're next visited
-          end
-        end
-      end
-
-      class Cursor
-        attr_reader :runtime, :current_scenario
-        private     :runtime
-        def initialize(runtime, test_case)
-          @runtime = runtime
-          test_case.describe_source_to(self)
-        end
-
-        def accept(formatter, &block)
-        end
-
-        def hook
-        end
-
-        def step(step, *args)
-          @current_step = step
+        def with_step(test)
+          @nodes << Step.new
           self
         end
 
-        def feature(feature, *args)
+        def test_step(*args)
           self
         end
 
-        def scenario(scenario, *args)
-          @current_scenario = scenario
-          self
-        end
-
-        def result(result, *args)
-          @current_result = result
-          self
-        end
-
-        def legacy_scenario(name, location)
-          LegacyResultBuilder.new(@current_result).scenario(name, location)
-        end
-
-        def legacy_step_result_attributes
-          LegacyResultBuilder.new(@current_result).
-            step_invocation(
-              step_match(@current_step),
-              @current_step,
-              Indent.new(@current_step)
-            ).
-            step_result_attributes
-        end
-
-        private
-        def step_match(step)
-          runtime.step_match(step.name)
-        rescue Cucumber::Undefined
-          NoStepMatch.new(step, step.name)
+        def accept(formatter, continue)
+          @nodes.reverse.reduce(continue) do |accept_next, node|
+            -> { node.accept(formatter, &accept_next) }
+          end.call
+          @nodes = []
         end
       end
 
@@ -314,16 +252,6 @@ module Cucumber
       end
 
       class Step
-        def self.for(test_step, cursor)
-          return new(cursor) if test_step.is_a? Core::Test::Step
-          return HookStep.new
-        end
-
-        attr_reader :cursor
-        private     :cursor
-        def initialize(cursor)
-          @cursor = cursor
-        end
 
         def accept(visitor, result)
           visitor.before_step
@@ -332,7 +260,7 @@ module Cucumber
           visitor.step_name
           visitor.exception if result.failed?
 
-          visitor.after_step_result *cursor.legacy_step_result_attributes
+          visitor.after_step_result # *cursor.legacy_step_result_attributes
           visitor.after_step
           self
         end

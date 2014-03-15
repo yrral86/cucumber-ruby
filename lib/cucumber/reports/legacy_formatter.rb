@@ -46,17 +46,17 @@ module Cucumber
       private :cursor
 
       def before_test_case(test_case, &continue)
-        continue.call
+        test_case.describe_source_to(tree_builder)
+        tree.accept(formatter, continue)
       end
 
       def before_test_step(test_step)
         test_step.describe_source_to(tree_builder)
-        puts tree
         self
       end
 
       def after_test_step(test_step, result)
-        #tree.step_result(test_step, result)
+        test_step.describe_to(tree, result)
         self
       end
 
@@ -86,29 +86,22 @@ module Cucumber
           @tree ||= Tree.new(:no_feature)
         end
 
-        def hook(location)
-          p "hook"
+        def feature(feature)
+          return if feature == tree.feature
+          @tree = Tree.new(feature)
         end
 
-        def feature(feature, &continue)
-          p 'feature'
-          unless feature == tree.feature
-            @tree = Tree.new(feature)
-          end
-          continue.call
+        def scenario(scenario)
+          return if scenario == tree.scenario
+          @tree = tree.with_scenario(scenario)
         end
 
-        def scenario(scenario, &continue)
-          p 'scenario'
-          unless scenario == tree.scenario
-            @tree = tree.with_scenario(scenario)
-          end
-          continue.call
-        end
-
-        def step(step, &continue)
+        def step(step)
           @tree = tree.with_step(step)
-          continue.call
+        end
+
+        def hook(location)
+          @tree = tree.with_hook(location)
         end
       end
 
@@ -118,6 +111,11 @@ module Cucumber
 
         def with_scenario(scenario)
           ScenarioTree.new(feature, scenario, [])
+        end
+
+        def with_hook(location)
+          # TODO
+          self
         end
 
         def scenario
@@ -134,6 +132,23 @@ module Cucumber
 
           def with_step(step)
             ScenarioTree.new(feature, scenario, steps + [step])
+          end
+
+          def with_hook(hook)
+            # TODO
+            self
+          end
+
+          def accept(formatter, continue)
+            Features.new.accept(formatter) do
+              Feature.new.accept(formatter) do
+                FeatureElement.new.accept(formatter, &continue)
+              end
+            end
+          end
+
+          def test_step(test_step, result)
+            # TODO - record result somewhere ready for when we're next visited
           end
         end
       end
@@ -224,7 +239,6 @@ module Cucumber
       end
 
       class FeatureElement
-        include Cucumber.initializer(:scenario, :cursor)
 
         def accept(visitor)
           visitor.before_feature_element
@@ -233,7 +247,7 @@ module Cucumber
 
           yield if block_given?
 
-          visitor.after_feature_element cursor.legacy_scenario(scenario.name, scenario.location)
+          visitor.after_feature_element # cursor.legacy_scenario(scenario.name, scenario.location)
           self
         end
       end

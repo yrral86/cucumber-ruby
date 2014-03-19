@@ -47,16 +47,17 @@ module Cucumber
 
       def before_test_case(test_case, &continue)
         test_case.describe_source_to(tree_builder)
-        tree.accept(formatter, continue)
+        tree.accept(formatter) do
+          continue.call
+        end
       end
 
       def before_test_step(test_step)
-        test_step.describe_source_to(tree_builder)
         self
       end
 
       def after_test_step(test_step, result)
-        test_step.describe_to(tree, result)
+        Step.new.accept(formatter, result)
         self
       end
 
@@ -120,6 +121,7 @@ module Cucumber
 
         def with_scenario(scenario)
           @nodes << FeatureElement.new
+          @nodes << Steps.new
           @scenario = scenario
           self
         end
@@ -130,7 +132,6 @@ module Cucumber
         end
 
         def with_step(test)
-          @nodes << Step.new
           self
         end
 
@@ -138,8 +139,8 @@ module Cucumber
           self
         end
 
-        def accept(formatter, continue)
-          @nodes.reverse.reduce(continue) do |accept_next, node|
+        def accept(formatter, &block)
+          @nodes.reverse.reduce(block) do |accept_next, node|
             -> { node.accept(formatter, &accept_next) }
           end.call
           @nodes = []
@@ -192,67 +193,15 @@ module Cucumber
 
       class Steps
         def accept(visitor)
-          visitor = StepsFormatter.new(visitor)
           visitor.before_steps
 
           yield visitor if block_given?
 
           visitor.after_steps
         end
-
-        require 'delegate'
-        class StepsFormatter < SimpleDelegator
-          attr_reader :messages
-          def initialize(visitor)
-            @visitor = visitor
-            @messages = []
-            @recording = true
-            super(visitor)
-          end
-
-          def before_steps(*args)
-            messages << [:before_steps, args]
-            self
-          end
-
-          def exception(*args)
-            if @recording
-              messages.unshift [:exception, args]
-            else
-              @visitor.exception(*args)
-            end
-            self
-          end
-
-          def before_step(*args)
-            playback
-            @visitor.before_step(*args)
-            self
-          end
-
-          def playback
-            if @recording
-              messages.each { |m, args| @visitor.public_send(m, *args) }
-              @messages = []
-              @recording = false
-            end
-          end
-
-          def after_step
-            @visitor.after_step
-            @recording = true
-          end
-
-          def after_steps
-            @visitor.after_steps
-            playback
-          end
-
-        end
       end
 
       class Step
-
         def accept(visitor, result)
           visitor.before_step
           yield if block_given?

@@ -57,6 +57,7 @@ module Cucumber
       end
 
       def after_test_step(test_step, result)
+        return self if test_step.is_a?(Core::Test::HookStep)
         Step.new.accept(formatter, result)
         self
       end

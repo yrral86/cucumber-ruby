@@ -57,9 +57,25 @@ module Cucumber
       end
 
       def after_test_step(test_step, result)
-        return self if test_step.is_a?(Core::Test::HookStep)
-        Step.new.accept(formatter, result)
+        # TODO: should merge StepWriter into TreeBuilder / Tree.
+        # To achieve this, might need to change the way we build the source of
+        # a Core::Test::HookStep so that we can call describe_source_to and get 
+        # something that describes itself as a hook
+        test_step.describe_to(StepWriter.new(formatter), result)
         self
+      end
+
+      class StepWriter
+        include Cucumber.initializer(:formatter)
+
+        def test_step(test_step, result)
+          Step.new.accept(formatter, result)
+        end
+
+        def before_hook(hook, result)
+          Hook.new.accept(formatter, result)
+        end
+
       end
 
       def after_test_case(test_case, result)
@@ -214,13 +230,12 @@ module Cucumber
           visitor.after_step
           self
         end
+      end
 
-        class HookStep
-          def accept(visitor, result)
-            visitor.exception if result.failed?
-            yield if block_given?
-            self
-          end
+      class Hook
+        def accept(visitor, result)
+          visitor.exception if result.failed?
+          self
         end
       end
 

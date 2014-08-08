@@ -81,7 +81,7 @@ Feature: Pretty formatter - Printing messages
     Scenario: Delayed messages feature
       When I run `cucumber --quiet --format pretty features/f.feature`
       Then the stderr should not contain anything
-      And the output should contain:
+      And the output should contain exactly:
       """
       Feature: 
 
@@ -124,6 +124,14 @@ Feature: Pretty formatter - Printing messages
             ./features/step_definitions/puts_steps.rb:13:in `/^I use message (.+) in line (.+) (?:with result (.+))$/'
             features/f.feature:25:in `Given I use message <ann> in line <line> with result <result>'
             | 2    | anno2 | pass   |  Line: 2: anno2
+      
+      Failing Scenarios:
+      cucumber features/f.feature:20
+      cucumber features/f.feature:29
+
+      8 scenarios (2 failed, 3 undefined, 3 passed)
+      11 steps (2 failed, 1 skipped, 3 undefined, 5 passed)
+      0m0.012s
       """
 
     Scenario: Non-delayed messages feature (progress formatter)

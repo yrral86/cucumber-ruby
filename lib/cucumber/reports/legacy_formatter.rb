@@ -85,8 +85,8 @@ module Cucumber
         printer.after_test_case(test_case, result)
       end
 
-      def puts(message)
-        printer.puts(message)
+      def puts(*messages)
+        printer.puts(messages)
       end
 
       def embed(src, mime_type, label)
@@ -161,8 +161,8 @@ module Cucumber
           self
         end
 
-        def puts(message)
-          @child.puts(message)
+        def puts(messages)
+          @child.puts(messages)
         end
 
         def embed(src, mime_type, label)
@@ -245,6 +245,8 @@ module Cucumber
           @current_test_step_source = TestStepPrinter.for(test_step, result)
           test_step.describe_source_to(self, result)
           print_step
+          print_messages
+          print_embeddings
         end
 
         def after_test_case(*args)
@@ -299,8 +301,8 @@ module Cucumber
           self
         end
 
-        def puts(message)
-          @delayed_messages << message
+        def puts(messages)
+          @delayed_messages.push *messages
         end
 
         def embed(src, mime_type, label)
@@ -333,17 +335,16 @@ module Cucumber
         end
 
         def print_step
-          return unless current_test_step_source.step_result
-          switch_step_container
+          if current_test_step_source.step_result
+            switch_step_container
 
-          if current_test_step_source.scenario_outline
-            @child.examples_table(current_test_step_source.examples_table)
-            @child.examples_table_row(current_test_step_source.examples_table_row, @before_hook_result)
+            if current_test_step_source.scenario_outline
+              @child.examples_table(current_test_step_source.examples_table)
+              @child.examples_table_row(current_test_step_source.examples_table_row, @before_hook_result)
+            end
+
+            @child.step(current_test_step_source)
           end
-
-          @child.step(current_test_step_source)
-          print_messages
-          print_embeddings
         end
 
         def print_embeddings
@@ -1058,6 +1059,7 @@ module Cucumber
           def print_exception(formatter)
             return unless exception
             raise exception if ENV['FAIL_FAST']
+            p exception
             formatter.exception(exception, status)
           end
         end

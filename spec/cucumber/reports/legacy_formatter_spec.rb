@@ -9,9 +9,9 @@ module Cucumber
     include Core
 
     let(:report)    { Reports::LegacyFormatter.new(runtime, [formatter]) }
-    let(:formatter) { double('formatter').as_null_object }
     let(:runtime)   { Runtime.new }
     let(:mappings)  { Mappings.new(runtime) }
+    let(:formatter) { MessageSpy.new }
 
     before(:each) do
       define_steps do
@@ -22,7 +22,6 @@ module Cucumber
     Failure = Class.new(StandardError)
 
     context 'message order' do
-      let(:formatter) { MessageSpy.new }
 
       it 'two features' do
         gherkin_docs = [
@@ -875,26 +874,30 @@ module Cucumber
       end
     end
 
-    it 'passes an object responding to failed? with the after_feature_element message' do
-      expect( formatter ).to receive(:after_feature_element) do |scenario|
-        expect( scenario ).to be_failed
-      end
-      execute_gherkin do
-        feature do
-          scenario do
-            step 'failing'
+    context 'when a step fails' do
+      let(:formatter) { double('formatter').as_null_object }
+      it 'passes an object responding to failed? with the after_feature_element message' do
+        expect( formatter ).to receive(:after_feature_element) do |scenario|
+          expect( scenario ).to be_failed
+        end
+        execute_gherkin do
+          feature do
+            scenario do
+              step 'failing'
+            end
           end
         end
       end
     end
 
     context 'in strict mode' do
+      let(:formatter) { double('formatter').as_null_object }
       let(:runtime) { Runtime.new strict: true }
 
       it 'passes an exception to the formatter for undefined steps' do
-      expect( formatter ).to receive(:exception) do |exception|
-        expect( exception.message ).to eq %{Undefined step: "this step is undefined"}
-      end
+        expect( formatter ).to receive(:exception) do |exception|
+          expect( exception.message ).to eq %{Undefined step: "this step is undefined"}
+        end
         execute_gherkin do
           feature do
             scenario do
@@ -902,6 +905,49 @@ module Cucumber
             end
           end
         end
+      end
+    end
+
+    context 'printing messages' do
+      it 'prints the message after the step that printed it' do
+        define_steps do
+          Given(/puts/) { puts "message" }
+        end
+        execute_gherkin do
+          feature do
+            scenario do
+              step 'puts'
+              step 'passing'
+            end
+          end
+        end
+
+        expect( formatter.messages ).to eq([
+          :before_features,
+            :before_feature,
+              :before_tags,
+              :after_tags,
+              :feature_name,
+              :before_feature_element,
+                :before_tags,
+                :after_tags,
+                :scenario_name,
+                :before_steps,
+                  :before_step,
+                    :before_step_result,
+                    :step_name,
+                    :after_step_result,
+                  :after_step,
+                  :before_step,
+                    :before_step_result,
+                    :step_name,
+                    :after_step_result,
+                  :after_step,
+                :after_steps,
+              :after_feature_element,
+            :after_feature,
+          :after_features
+        ])
       end
     end
 

@@ -19,6 +19,11 @@ Feature: Showing differences to expected output
         expect('this').to eq 'that'
       end
       """
+    And a file named "features/support/env.rb" with:
+      """
+        require 'rspec/expectations'
+        World(::RSpec::Matchers)
+      """
     When I run `cucumber -q features/failing_expectation.feature`
     Then it should fail with:
       """

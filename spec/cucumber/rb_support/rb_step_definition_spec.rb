@@ -132,7 +132,7 @@ module Cucumber
       it "recognizes $arg style captures" do
         arg_value = "wow!"
         dsl.Given "capture this: $arg" do |arg|
-          expect(arg).to eq arg_value
+          raise "expected #{arg} to == #{arg_value}" unless arg == arg_value
         end
         run_step "capture this: wow!"
       end

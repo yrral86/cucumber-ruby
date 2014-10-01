@@ -5,7 +5,6 @@ require 'cucumber/rb_support/rb_step_definition'
 require 'cucumber/rb_support/rb_hook'
 require 'cucumber/rb_support/rb_transform'
 require 'cucumber/rb_support/snippet'
-require 'multi_test'
 
 module Cucumber
   module RbSupport
@@ -115,7 +114,6 @@ module Cucumber
 
       def extend_world
         @current_world.extend(RbWorld)
-        MultiTest.extend_with_best_assertion_library(@current_world)
         (@world_modules || []).each do |mod|
           @current_world.extend(mod)
         end

@@ -20,10 +20,10 @@ Feature: State
         @flag = true
       end
       Then /flag should be true/ do
-        expect(@flag).to be_truthy
+        raise "expected @flag to be truthy, but it was falsey" unless @flag
       end
       Then /flag should be nil/ do
-        expect(@flag).to be_nil
+        raise "expected @flag to be nil, but it was #{@flag}" unless @flag.nil?
       end
       """
     When I run `cucumber`

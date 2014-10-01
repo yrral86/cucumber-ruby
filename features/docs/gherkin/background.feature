@@ -192,11 +192,11 @@ Feature: Background
       end
 
       Then /^I should have '(.+)' global cukes$/ do |cukes| x=1
-        expect($cukes).to eq cukes
+        raise "expected $cukes to == #{cukes}, but got #{$cukes}" unless $cukes == cukes
       end
 
       Then /^I should have '(.+)' cukes$/ do |cukes| x=1
-        expect(@cukes).to eq cukes
+        raise "expected @cukes to == #{cukes}, but got #{@cukes}" unless @cukes == cukes
       end
 
       Before('@background_tagged_before_on_outline') do
@@ -204,7 +204,7 @@ Feature: Background
       end
 
       After('@background_tagged_before_on_outline') do
-        expect(@cukes).to eq '888'
+        raise "expected @cukes to == '888', but got #{@cukes}" unless @cukes == '888'
       end
       """
 
@@ -509,11 +509,11 @@ Feature: Background
       end
 
       Then /^the table should be$/ do |table| x=1
-        expect(@table.raw).to eq table.raw
+        raise "expected @table.raw to == #{table.raw}, but got #{@table.raw}" unless @table.raw == table.raw
       end
 
       Then /^the multiline string should be$/ do |string| x=1
-        expect(@multiline).to eq string
+        raise "expected @multiline to == #{string}, but got #{@multiline}" unless @multiline == string
       end
       """
     When I run `cucumber -q features/multiline_args_background.feature`

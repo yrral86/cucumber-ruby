@@ -13,7 +13,7 @@ module Cucumber
 
       def method_missing(message, *args)
         recipients.each do |recipient|
-          recipient.send(message, *args) if recipient.respond_to?(message)
+          recipient.send(message, *args)
         end
       end
 

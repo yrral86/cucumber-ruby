@@ -188,10 +188,28 @@ module Cucumber
       @mappings = Mappings.for(self)
     end
 
+    class Formatter::IgnoreMissingMessages < BasicObject
+      def initialize(formatter)
+        @formatter = formatter
+      end
+
+      def method_missing(message, *args)
+        @formatter.send(message, *args) if @formatter.respond_to?(message)
+      end
+
+      def respond_to_missing?(name, include_private = false)
+        @formatter.respond_to?(name, include_private)
+      end
+    end
+
     require 'cucumber/formatter/legacy_api/adapter'
     def report
-      
-      @report ||= Formatter::LegacyApi::Adapter.new(self, Formatter::Fanout.new(@configuration.formatters(self)))
+
+      @report ||= Formatter::Fanout.new(
+        @configuration.formatters(self).map {
+          |f| Formatter::LegacyApi::Adapter.new(self, Formatter::IgnoreMissingMessages.new(f))
+        }
+      )
     end
 
     require 'cucumber/core/test/filters'

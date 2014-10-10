@@ -189,10 +189,27 @@ module Cucumber
     end
 
     require 'cucumber/formatter/legacy_api/adapter'
+    require 'cucumber/core/report/summary'
     def report
-      
-      @report ||= Formatter::LegacyApi::Adapter.new(self, Formatter::Fanout.new(@configuration.formatters(self)))
+      @report ||= Formatter::Fanout.new([
+        summary_report,
+        Formatter::LegacyApi::Adapter.new(self, Formatter::Fanout.new(@configuration.formatters(self))),
+      ])
     end
+
+    def summary_report
+      @summary_report ||= Core::Report::Summary.new
+    end
+
+    def failure?
+      if @configuration.wip?
+        summary_report.test_cases.total_passed > 0
+      else
+        summary_report.test_cases.total_failed > 0 || summary_report.test_steps.total_failed > 0 ||
+          (@configuration.strict? && (summary_report.test_steps.total_undefined > 0 || summary_report.test_steps.total_skipped > 0))
+      end
+    end
+    public :failure?
 
     require 'cucumber/core/test/filters'
     def filters

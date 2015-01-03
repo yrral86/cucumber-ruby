@@ -1,47 +1,57 @@
 require 'cucumber/filters/activate_steps'
 require 'cucumber/core/gherkin/writer'
+require 'cucumber/core'
 
 describe Cucumber::Filters::ActivateSteps do
   include Cucumber::Core::Gherkin::Writer
   include Cucumber::Core
 
-  let(:step_definitions) { double(matching_name: []) }
-  let(:passing_step_definition) { double }
-  let(:receiver) { double }
+  let(:step_definitions) { double(find_match: step_match) }
+  let(:step_match) { double(activate: activated_test_step) }
+  let(:activated_test_step) { double }
+  let(:receiver) { double.as_null_object }
 
-  context "for a step that has a matching step definition" do
+  context "a scenario with a single step" do
     let(:doc) do
       gherkin do
         feature do
           scenario do
-            step 'passing'
+            step 'a passing step'
           end
         end
       end
     end
 
-    before do
-      allow(step_definitions).to receive(:matching_name).and_return(passing_step_definition)
-    end
-
-    it "activates the step" do
-      expect(receiver).to receive(:test_case) do |test_case|
-        step = test_case.test_steps.first
-        expect(step.name).to eq 'passing'
-        expect(step.execute).to be_passed
+    it "activates each step" do
+      expect(step_match).to receive(:activate) do |test_step|
+        expect(test_step.name).to eq 'a passing step'
       end
-      execute [doc]
+      compile [doc], receiver, [Cucumber::Filters::ActivateSteps.new(step_definitions)]
     end
   end
 
-  context "for a step with no matching step definition" do
-    it "leaves the step undefined" do
+  context "a scenario outline" do
+    let(:doc) do
+      gherkin do
+        feature do
+          scenario_outline do
+            step 'a <status> step'
+
+            examples do
+              row 'status'
+              row 'passing'
+            end
+          end
+        end
+      end
+    end
+
+    it "activates each step" do
+      expect(step_match).to receive(:activate) do |test_step|
+        expect(test_step.name).to eq 'a passing step'
+      end
+      compile [doc], receiver, [Cucumber::Filters::ActivateSteps.new(step_definitions)]
     end
   end
 
-  context "for a failing step definition" do
-  end
-
-  context "for a pending step definition" do
-  end
 end

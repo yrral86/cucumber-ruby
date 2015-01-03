@@ -121,6 +121,12 @@ module Cucumber
         end.flatten
       end
 
+      def find_match(test_step)
+        step_match(test_step.name)
+      rescue Cucumber::Undefined
+        return NoStepMatch.new
+      end
+
       def step_match(step_name, name_to_report=nil) #:nodoc:
         @match_cache ||= {}
 

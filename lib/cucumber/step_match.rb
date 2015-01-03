@@ -1,3 +1,5 @@
+require 'cucumber/multiline_argument'
+
 module Cucumber
   class StepMatch #:nodoc:
     attr_reader :step_definition, :step_arguments
@@ -17,6 +19,12 @@ module Cucumber
 
     def name
       @name_to_report
+    end
+
+    def activate(test_step)
+      test_step.with_action do
+        invoke(MultilineArgument.from_core(test_step.source.last.multiline_arg))
+      end
     end
 
     def invoke(multiline_arg)
@@ -114,6 +122,11 @@ module Cucumber
 
     def step_arguments
       []
+    end
+
+    def activate(test_step)
+      # noop
+      return test_step
     end
   end
 end

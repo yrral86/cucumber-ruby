@@ -122,9 +122,15 @@ module Cucumber
       end
 
       def find_match(test_step)
-        step_match(test_step.name)
-      rescue Cucumber::Undefined
-        return NoStepMatch.new
+        begin
+          match = step_match(test_step.name)
+        rescue Cucumber::Undefined
+          return NoStepMatch.new(test_step.source.last, test_step.name)
+        end
+        if @configuration.dry_run?
+          return SkippingStepMatch.new
+        end
+        match
       end
 
       def step_match(step_name, name_to_report=nil) #:nodoc:

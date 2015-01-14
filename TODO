@@ -1,0 +1,9 @@
+The AfterStepHook stuff isn't working yet.
+
+It's something to do with what's getting passed to the Legacy Adapter.
+
+However when you run the legacy adapter specs, you realise that the way we've changed the model, removing the mapper, has broken all those specs.
+
+I think we need to fix them first. This is made tricky because those specs need to set up scenarios where there are different kinds of hooks, and the AddHooks filter is currently very very coupled to the rb_langauge API
+
+Need to re-do the AddHooks class with mocks and design a decent API?

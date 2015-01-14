@@ -1,11 +1,24 @@
 module Cucumber
 
-  # Hooks quack enough like Core::Ast source nodes that we can use them as source for steps
+  # Hooks quack enough like `Cucumber::Core::Ast` source nodes that we can use them as 
+  # source for test steps
   module Hooks
 
     class << self
       def before_hook(source, &block)
         build_hook_step(source, block, BeforeHook, Core::Test::UnskippableAction)
+      end
+
+      def after_hook(source, &block)
+        build_hook_step(source, block, AfterHook, Core::Test::UnskippableAction)
+      end
+
+      def after_step_hook(source, &block)
+        build_hook_step(source, block, AfterStepHook, Core::Test::Action)
+      end
+
+      def around_hook(source, &block)
+        AroundHook.new(&block)
       end
 
       private
@@ -14,6 +27,40 @@ module Cucumber
         action = action_type.new(&block)
         hook = hook_type.new(action.location)
         Core::Test::Step.new(source + [hook], action)
+      end
+    end
+
+    class AfterHook
+      attr_reader :location
+
+      def initialize(location)
+        @location = location
+      end
+
+      def name
+        "After hook"
+      end
+
+      def match_locations?(queried_locations)
+        queried_locations.any? { |other_location| other_location.match?(location) }
+      end
+
+      def describe_to(visitor, *args)
+        visitor.after_hook(self, *args)
+      end
+    end
+
+    class AroundHook
+      def initialize(&block)
+        @block = block
+      end
+
+      def describe_to(visitor, *args, &continue)
+        visitor.around_hook(self, *args, &continue)
+      end
+
+      def call(continue)
+        @block.call(continue)
       end
     end
 
@@ -34,6 +81,26 @@ module Cucumber
 
       def describe_to(visitor, *args)
         visitor.before_hook(self, *args)
+      end
+    end
+
+    class AfterStepHook
+      attr_reader :location
+
+      def initialize(location)
+        @location = location
+      end
+
+      def name
+        "AfterStep hook"
+      end
+
+      def match_locations?(queried_locations)
+        queried_locations.any? { |other_location| other_location.match?(location) }
+      end
+
+      def describe_to(visitor, *args)
+        visitor.after_step_hook(self, *args)
       end
     end
 

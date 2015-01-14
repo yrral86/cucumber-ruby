@@ -6,11 +6,12 @@ module Cucumber
   module Filters
 
     class PrepareWorld < Core::Filter.new(:runtime)
+
       def test_case(test_case)
-        InitTestCase.new(runtime, test_case).test_case.describe_to(receiver)
+        CaseFilter.new(runtime, test_case).test_case.describe_to receiver
       end
 
-      class InitTestCase
+      class CaseFilter
         def initialize(runtime, original_test_case)
           @runtime, @original_test_case = runtime, original_test_case
         end

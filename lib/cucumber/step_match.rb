@@ -95,6 +95,12 @@ module Cucumber
     end
   end
 
+  class SkippingStepMatch
+    def activate(test_step)
+      return test_step.with_action { raise Core::Test::Result::Skipped.new }
+    end
+  end
+
   class NoStepMatch #:nodoc:
     attr_reader :step_definition, :name
 

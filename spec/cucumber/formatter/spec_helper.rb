@@ -20,12 +20,10 @@ module Cucumber
       def run_defined_feature
         define_steps
         runtime.visitor = report
-        execute [gherkin_doc], mappings, report
-      end
 
-      require 'cucumber/mappings'
-      def mappings
-        @mappings ||= Mappings.new
+        receiver = Test::Runner.new(report)
+        filters = [Filters::ActivateSteps.new(runtime.support_code)]
+        compile [gherkin_doc], receiver, filters
       end
 
       require 'cucumber/formatter/legacy_api/adapter'
@@ -47,7 +45,7 @@ module Cucumber
       end
 
       def runtime
-        mappings.runtime
+        @runtime ||= Runtime.new
       end
 
       def define_steps

@@ -9,11 +9,7 @@ require 'cucumber/load_path'
 require 'cucumber/language_support/language_methods'
 require 'cucumber/formatter/duration'
 require 'cucumber/file_specs'
-require 'cucumber/filters/activate_steps'
-require 'cucumber/filters/prepare_world'
-require 'cucumber/filters/quit'
-require 'cucumber/filters/randomizer'
-require 'cucumber/filters/tag_limits'
+require 'cucumber/filters'
 require 'cucumber/formatter/fanout'
 
 module Cucumber
@@ -65,22 +61,13 @@ module Cucumber
       @support_code.load_programming_language(language)
     end
 
-    # while we remove mappings from the core, we need to pass it something
-    # TODO: remove
-    class NoMappings
-      def test_case(*args)
-      end
-
-      def test_step(*args)
-      end
-    end
-
     def run!
       load_step_definitions
       fire_after_configuration_hook
       self.visitor = report
 
-      execute features, NoMappings.new, report, filters
+      receiver = Test::Runner.new(report)
+      compile features, receiver, filters
     end
 
     def features_paths
@@ -237,7 +224,9 @@ module Cucumber
         filters << Cucumber::Core::Test::LocationsFilter.new(filespecs.locations)
         filters << Filters::Quit.new
         filters << Filters::ActivateSteps.new(@support_code)
-        filters << Filters::PrepareWorld.new(self)
+        filters << Filters::AddHooks.new(load_programming_language('rb')) unless configuration.dry_run?
+        # need to do this last so it becomes the first test step
+        filters << Filters::PrepareWorld.new(self) unless configuration.dry_run?
       end
     end
 

@@ -1528,7 +1528,7 @@ module Cucumber
 
         context 'with exception in a single before hook' do
           class FailingBeforeHook
-            def find_before_hooks(test_case)
+            def apply_before_hooks(test_case)
               Runtime::BeforeHooks.new test_case, [proc { raise Failure }]
             end
           end
@@ -1687,7 +1687,7 @@ module Cucumber
           # This proves that the second before hook's result doesn't overwrite
           # the result of the first one.
           class FailingAndPassingBeforeHooks
-            def find_before_hooks(test_case)
+            def apply_before_hooks(test_case)
               Runtime::BeforeHooks.new test_case, [proc { raise Failure }, proc { }]
             end
           end

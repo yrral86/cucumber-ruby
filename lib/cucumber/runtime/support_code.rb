@@ -145,7 +145,7 @@ module Cucumber
         StepHooks.new action_blocks
       end
 
-      def find_before_hooks(test_case)
+      def apply_before_hooks(test_case)
         ruby = load_programming_language('rb')
         scenario = Mappings::Source.new(test_case).build_scenario
 

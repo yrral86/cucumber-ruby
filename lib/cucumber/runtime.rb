@@ -225,6 +225,7 @@ module Cucumber
         filters << Filters::Quit.new
         filters << Filters::ActivateSteps.new(@support_code)
         filters << Filters::ApplyAfterStepHooks.new(@support_code)
+        filters << Filters::ApplyBeforeHooks.new(@support_code)
         filters << Filters::AddHooks.new(load_programming_language('rb')) unless configuration.dry_run?
         # need to do this last so it becomes the first test step
         filters << Filters::PrepareWorld.new(self) unless configuration.dry_run?

@@ -34,11 +34,7 @@ module Cucumber
         end
 
         def before_hooks
-          @ruby.hooks_for(:before, scenario).map do |hook|
-            Hooks.before_hook(@original_test_case.source) do |result|
-              hook.invoke('Before', scenario.with_result(result))
-            end
-          end
+          []
         end
 
         def after_hooks

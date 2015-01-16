@@ -1529,7 +1529,7 @@ module Cucumber
         context 'with exception in a single before hook' do
           class FailingBeforeHook
             def find_before_hooks(test_case)
-              Runtime::BeforeHooks.new test_case, [-> { raise Failure }]
+              Runtime::BeforeHooks.new test_case, [proc { raise Failure }]
             end
           end
 
@@ -1572,13 +1572,12 @@ module Cucumber
           end
 
           it 'prints the exception after the background name' do
-            mappings = Class.new(CustomMappings) {
-              def test_case(test_case, mapper)
-                mapper.before { raise Failure }
-              end
-            }.new
-
-            execute_gherkin(mappings) do
+            filters = [
+              Filters::ActivateSteps.new(SimpleStepDefinitions.new),
+              Filters::ApplyBeforeHooks.new(FailingBeforeHook.new),
+              AddBeforeAndAfterHooks.new
+            ]
+            execute_gherkin(filters) do
               feature do
                 background do
                   step 'passing'
@@ -1625,13 +1624,12 @@ module Cucumber
 
 
           it 'prints the exception before the examples table row' do
-            mappings = Class.new(CustomMappings) {
-              def test_case(test_case, mapper)
-                mapper.before { raise Failure }
-              end
-            }.new
-
-            execute_gherkin(mappings) do
+            filters = [
+              Filters::ActivateSteps.new(SimpleStepDefinitions.new),
+              Filters::ApplyBeforeHooks.new(FailingBeforeHook.new),
+              AddBeforeAndAfterHooks.new
+            ]
+            execute_gherkin(filters) do
               feature do
                 scenario_outline do
                   step '<status>ing'
@@ -1688,15 +1686,19 @@ module Cucumber
         context 'with exception in the first of several before hooks' do
           # This proves that the second before hook's result doesn't overwrite
           # the result of the first one.
-          it 'prints the exception after the scenario name' do
-            mappings = Class.new(CustomMappings) {
-              def test_case(test_case, mapper)
-                mapper.before { raise Failure }
-                mapper.before { }
-              end
-            }.new
+          class FailingAndPassingBeforeHooks
+            def find_before_hooks(test_case)
+              Runtime::BeforeHooks.new test_case, [proc { raise Failure }, proc { }]
+            end
+          end
 
-            execute_gherkin(mappings) do
+          it 'prints the exception after the scenario name' do
+            filters = [
+              Filters::ActivateSteps.new(SimpleStepDefinitions.new),
+              Filters::ApplyBeforeHooks.new(FailingAndPassingBeforeHooks.new),
+              AddBeforeAndAfterHooks.new
+            ]
+            execute_gherkin(filters) do
               feature do
                 scenario do
                   step 'passing'

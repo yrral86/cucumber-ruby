@@ -1,6 +1,7 @@
 require 'cucumber/constantize'
 require 'cucumber/runtime/for_programming_languages'
 require 'cucumber/runtime/step_hooks'
+require 'cucumber/runtime/before_hooks'
 
 module Cucumber
 
@@ -139,8 +140,23 @@ module Cucumber
           hook.tag_expressions.all? { |expression| match_tags?(expression) }
         end
 
-        action_blocks = ruby.hooks_for(:after_step, test_case).map { |hook| ->(*args) { hook.invoke('AfterStep', args) } }
+        action_blocks = ruby.hooks_for(:after_step, test_case).map do |hook|
+          ->(*args) { hook.invoke('AfterStep', args) }
+        end
         StepHooks.new action_blocks
+      end
+
+      def find_before_hooks(test_case)
+        ruby = load_programming_language('rb')
+        def test_case.accept_hook?(hook)
+          hook.tag_expressions.all? { |expression| match_tags?(expression) }
+        end
+        scenario = Mappings::Source.new(test_case).build_scenario
+
+        action_blocks = ruby.hooks_for(:before, test_case).map do |hook|
+          ->(result) { hook.invoke('Before', scenario.with_result(result)) }
+        end
+        BeforeHooks.new test_case, action_blocks
       end
 
       def step_match(step_name, name_to_report=nil) #:nodoc:

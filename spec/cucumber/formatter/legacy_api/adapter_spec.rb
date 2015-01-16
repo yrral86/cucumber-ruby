@@ -2,6 +2,7 @@ require 'cucumber/formatter/legacy_api/adapter'
 require 'cucumber/core'
 require 'cucumber/core/gherkin/writer'
 require 'cucumber/mappings'
+require 'cucumber/runtime/step_hooks'
 
 module Cucumber
   module Formatter::LegacyApi
@@ -1480,15 +1481,19 @@ module Cucumber
 
         context 'with exception in after step hook' do
 
-          class ActivateStepsWithFailingAfterStepHook
-            def activate(test_step)
-              p test_step.location
-              [ super, test_step.with_action { raise Failure } ]
+          class SimpleAfterStepHookDefinitions
+            def find_after_step_hooks(test_case)
+              Runtime::StepHooks.new [-> { raise Failure }]
             end
           end
 
           it 'prints the exception within the step' do
-            execute_gherkin([ActivateStepsWithFailingAfterStepHook.new]) do
+            filters = [
+              Filters::ActivateSteps.new(SimpleStepDefinitions.new),
+              Filters::ApplyAfterStepHooks.new(SimpleAfterStepHookDefinitions.new),
+              AddBeforeAndAfterHooks.new
+            ]
+            execute_gherkin(filters) do
               feature do
                 scenario do
                   step 'passing'

@@ -22,7 +22,7 @@ module Cucumber
         private
 
         def new_test_steps
-          before_hooks + wrap_with_step_hooks(@original_test_case.test_steps) + after_hooks
+          before_hooks + @original_test_case.test_steps + after_hooks
         end
 
         def around_hooks
@@ -47,19 +47,6 @@ module Cucumber
               hook.invoke('After', scenario.with_result(result))
             end
           end
-        end
-
-        def wrap_with_step_hooks(test_steps)
-          result = []
-          test_steps.each do |test_step|
-            result << test_step
-            @ruby.hooks_for(:after_step, scenario).each do |hook|
-              result << Hooks.after_step_hook(@original_test_case.source) do
-                hook.invoke 'AfterStep', scenario
-              end
-            end
-          end
-          result
         end
 
         def scenario

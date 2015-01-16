@@ -1,5 +1,6 @@
 require 'cucumber/constantize'
 require 'cucumber/runtime/for_programming_languages'
+require 'cucumber/runtime/step_hooks'
 
 module Cucumber
 
@@ -7,7 +8,6 @@ module Cucumber
 
     class SupportCode
 
-      # TODO: figure out a way to move this to the core. We'd need to have access to the mappings to pass those in.
       require 'forwardable'
       class StepInvoker
         include Gherkin::Rubify
@@ -131,6 +131,16 @@ module Cucumber
           return SkippingStepMatch.new
         end
         match
+      end
+
+      def find_after_step_hooks(test_case)
+        ruby = load_programming_language('rb')
+        def test_case.accept_hook?(hook)
+          hook.tag_expressions.all? { |expression| match_tags?(expression) }
+        end
+
+        action_blocks = ruby.hooks_for(:after_step, test_case).map { |hook| ->(*args) { hook.invoke('AfterStep', args) } }
+        StepHooks.new action_blocks
       end
 
       def step_match(step_name, name_to_report=nil) #:nodoc:

@@ -14,6 +14,7 @@ module Cucumber
       end
 
       def after_step_hook(source, &block)
+        raise ArgumentError unless source.last.kind_of?(Core::Ast::Step)
         build_hook_step(source, block, AfterStepHook, Core::Test::Action)
       end
 

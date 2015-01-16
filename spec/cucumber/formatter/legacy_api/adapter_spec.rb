@@ -42,9 +42,6 @@ module Cucumber
         end
       end
 
-      class CustomMappings
-      end
-
       class AddBeforeAndAfterHooks < Core::Filter.new
         def test_case(test_case)
           steps = before_hooks(test_case.source) + 

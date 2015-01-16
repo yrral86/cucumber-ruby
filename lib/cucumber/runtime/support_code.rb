@@ -174,6 +174,20 @@ module Cucumber
 
       end
 
+      def find_around_hooks(test_case)
+        ruby = load_programming_language('rb')
+        def test_case.accept_hook?(hook)
+          hook.tag_expressions.all? { |expression| match_tags?(expression) }
+        end
+        scenario = Mappings::Source.new(test_case).build_scenario
+
+        ruby.hooks_for(:around, scenario).map do |hook|
+          Hooks.around_hook(test_case.source) do |run_scenario|
+            hook.invoke('Around', scenario, &run_scenario)
+          end
+        end
+      end
+
       def step_match(step_name, name_to_report=nil) #:nodoc:
         @match_cache ||= {}
 

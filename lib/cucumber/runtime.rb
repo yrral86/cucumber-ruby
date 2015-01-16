@@ -228,7 +228,7 @@ module Cucumber
           filters << Filters::ApplyAfterStepHooks.new(@support_code)
           filters << Filters::ApplyBeforeHooks.new(@support_code)
           filters << Filters::ApplyAfterHooks.new(@support_code)
-          filters << Filters::AddHooks.new(load_programming_language('rb'))
+          filters << Filters::ApplyAroundHooks.new(@support_code)
           filters << Filters::PrepareWorld.new(self)
         end
       end

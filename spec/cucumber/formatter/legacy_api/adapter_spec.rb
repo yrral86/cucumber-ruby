@@ -4,6 +4,7 @@ require 'cucumber/core/gherkin/writer'
 require 'cucumber/mappings'
 require 'cucumber/runtime/step_hooks'
 require 'cucumber/runtime/before_hooks'
+require 'cucumber/runtime/after_hooks'
 
 module Cucumber
   module Formatter::LegacyApi
@@ -36,6 +37,8 @@ module Cucumber
           if test_step.name =~ /fail/
             return SimpleStepMatch.new { raise Failure }
           end
+
+          NoStepMatch.new test_step.source.last, test_step.name
         end
       end
 
@@ -1732,17 +1735,20 @@ module Cucumber
         end
 
         context 'with exception in after hooks' do
-          let(:mappings) do
-            Class.new(CustomMappings) {
-              def test_case(test_case, mapper)
-                mapper.after { raise Failure }
-              end
-            }.new
+
+          class FailingAfterHook
+            def find_after_hooks(test_case)
+              Runtime::AfterHooks.new test_case, [proc { raise Failure }]
+            end
           end
 
           it 'prints the exception after the steps' do
-
-            execute_gherkin(mappings) do
+            filters = [
+              Filters::ActivateSteps.new(SimpleStepDefinitions.new),
+              Filters::ApplyAfterHooks.new(FailingAfterHook.new),
+              AddBeforeAndAfterHooks.new
+            ]
+            execute_gherkin(filters) do
               feature do
                 scenario do
                   step 'passing'
@@ -1775,7 +1781,12 @@ module Cucumber
           end
 
           it 'prints the exception after the examples table row' do
-            execute_gherkin do
+            filters = [
+              Filters::ActivateSteps.new(SimpleStepDefinitions.new),
+              Filters::ApplyAfterHooks.new(FailingAfterHook.new),
+              AddBeforeAndAfterHooks.new
+            ]
+            execute_gherkin(filters) do
               feature do
                 scenario_outline do
                   step '<status>ing'
@@ -1830,17 +1841,19 @@ module Cucumber
         end
 
         context 'with exception in the first of several after hooks' do
-          let(:mappings) do
-            Class.new(CustomMappings) {
-              def test_case(test_case, mapper)
-                mapper.after { raise Failure }
-                mapper.after { }
-              end
-            }.new
+          class FailingThenPassingAfterHooks
+            def find_after_hooks(test_case)
+              Runtime::AfterHooks.new test_case, [proc { raise Failure }, proc {}]
+            end
           end
 
           it 'prints the exception after the steps' do
-            execute_gherkin do
+            filters = [
+              Filters::ActivateSteps.new(SimpleStepDefinitions.new),
+              Filters::ApplyAfterHooks.new(FailingThenPassingAfterHooks.new),
+              AddBeforeAndAfterHooks.new
+            ]
+            execute_gherkin(filters) do
               feature do
                 scenario do
                   step 'passing'
@@ -1874,16 +1887,13 @@ module Cucumber
         end
 
         context 'with an exception in an after hook but no steps' do
-          let(:mappings) do
-            Class.new(CustomMappings) {
-              def test_case(test_case, mapper)
-                mapper.after { raise Failure }
-              end
-            }.new
-          end
-
           it 'prints the exception after the steps' do
-            execute_gherkin do
+            filters = [
+              Filters::ActivateSteps.new(SimpleStepDefinitions.new),
+              Filters::ApplyAfterHooks.new(FailingAfterHook.new),
+              AddBeforeAndAfterHooks.new
+            ]
+            execute_gherkin(filters) do
               feature do
                 scenario do
                 end
@@ -1926,9 +1936,9 @@ module Cucumber
         let(:runtime) { Runtime.new strict: true }
 
         it 'passes an exception to the formatter for undefined steps' do
-        expect( formatter ).to receive(:exception) do |exception|
-          expect( exception.message ).to eq %{Undefined step: "this step is undefined"}
-        end
+          expect( formatter ).to receive(:exception) do |exception|
+            expect( exception.message ).to eq %{Undefined step: "this step is undefined"}
+          end
           execute_gherkin do
             feature do
               scenario do

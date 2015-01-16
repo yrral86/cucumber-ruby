@@ -38,11 +38,7 @@ module Cucumber
         end
 
         def after_hooks
-          @ruby.hooks_for(:after, scenario).map do |hook|
-            Hooks.after_hook(@original_test_case.source) do |result|
-              hook.invoke('After', scenario.with_result(result))
-            end
-          end
+          []
         end
 
         def scenario

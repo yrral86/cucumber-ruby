@@ -3,6 +3,7 @@ require 'cucumber/core'
 require 'cucumber/core/gherkin/writer'
 require 'cucumber/mappings'
 require 'cucumber/runtime/step_hooks'
+require 'cucumber/runtime/before_hooks'
 
 module Cucumber
   module Formatter::LegacyApi
@@ -1481,7 +1482,7 @@ module Cucumber
 
         context 'with exception in after step hook' do
 
-          class SimpleAfterStepHookDefinitions
+          class FailingAfterStepHook
             def find_after_step_hooks(test_case)
               Runtime::StepHooks.new [-> { raise Failure }]
             end
@@ -1490,7 +1491,7 @@ module Cucumber
           it 'prints the exception within the step' do
             filters = [
               Filters::ActivateSteps.new(SimpleStepDefinitions.new),
-              Filters::ApplyAfterStepHooks.new(SimpleAfterStepHookDefinitions.new),
+              Filters::ApplyAfterStepHooks.new(FailingAfterStepHook.new),
               AddBeforeAndAfterHooks.new
             ]
             execute_gherkin(filters) do
@@ -1526,17 +1527,19 @@ module Cucumber
         end
 
         context 'with exception in a single before hook' do
-          class CustomMappingsWithBeforeHook < CustomMappings
-            def test_case(test_case, mappings)
-              super
-              mappings.before { raise Failure }
+          class FailingBeforeHook
+            def find_before_hooks(test_case)
+              Runtime::BeforeHooks.new test_case, [-> { raise Failure }]
             end
           end
 
-          let(:mappings) { CustomMappingsWithBeforeHook.new }
-
           it 'prints the exception after the scenario name' do
-            execute_gherkin do
+            filters = [
+              Filters::ActivateSteps.new(SimpleStepDefinitions.new),
+              Filters::ApplyBeforeHooks.new(FailingBeforeHook.new),
+              AddBeforeAndAfterHooks.new
+            ]
+            execute_gherkin(filters) do
               feature do
                 scenario do
                   step 'passing'

@@ -22,7 +22,14 @@ module Cucumber
         runtime.visitor = report
 
         receiver = Test::Runner.new(report)
-        filters = [Filters::ActivateSteps.new(runtime.support_code)]
+        filters = [
+          Filters::ActivateSteps.new(runtime.support_code),
+          Filters::ApplyAfterStepHooks.new(runtime.support_code),
+          Filters::ApplyBeforeHooks.new(runtime.support_code),
+          Filters::ApplyAfterHooks.new(runtime.support_code),
+          Filters::ApplyAroundHooks.new(runtime.support_code),
+          Filters::PrepareWorld.new(runtime)
+        ]
         compile [gherkin_doc], receiver, filters
       end
 

@@ -1529,7 +1529,7 @@ module Cucumber
         context 'with exception in a single before hook' do
           class FailingBeforeHook
             def apply_before_hooks(test_case)
-              Runtime::BeforeHooks.new([proc { raise Failure }]).apply(test_case)
+              Runtime::BeforeHooks.new([proc { raise Failure }]).apply_to(test_case)
             end
           end
 
@@ -1688,7 +1688,7 @@ module Cucumber
           # the result of the first one.
           class FailingAndPassingBeforeHooks
             def apply_before_hooks(test_case)
-              Runtime::BeforeHooks.new([proc { raise Failure }, proc { }]).apply(test_case)
+              Runtime::BeforeHooks.new([proc { raise Failure }, proc { }]).apply_to(test_case)
             end
           end
 
@@ -1734,8 +1734,8 @@ module Cucumber
         context 'with exception in after hooks' do
 
           class FailingAfterHook
-            def find_after_hooks(test_case)
-              Runtime::AfterHooks.new test_case, [proc { raise Failure }]
+            def apply_after_hooks(test_case)
+              Runtime::AfterHooks.new([proc { raise Failure }]).apply_to(test_case)
             end
           end
 
@@ -1839,8 +1839,8 @@ module Cucumber
 
         context 'with exception in the first of several after hooks' do
           class FailingThenPassingAfterHooks
-            def find_after_hooks(test_case)
-              Runtime::AfterHooks.new test_case, [proc { raise Failure }, proc {}]
+            def apply_after_hooks(test_case)
+              Runtime::AfterHooks.new([proc { raise Failure }, proc {}]).apply_to(test_case)
             end
           end
 

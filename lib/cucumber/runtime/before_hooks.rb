@@ -5,13 +5,15 @@ module Cucumber
         @action_blocks = action_blocks
       end
 
-      def apply(test_case)
+      def apply_to(test_case)
         test_case.with_steps(
-           activate(test_case.source) + test_case.test_steps
+          before_hooks(test_case.source) + test_case.test_steps
         )
       end
 
-      def activate(source)
+      private
+
+      def before_hooks(source)
         @action_blocks.map do |action_block|
           Hooks.before_hook(source, &action_block)
         end

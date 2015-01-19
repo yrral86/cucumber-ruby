@@ -1,10 +1,10 @@
 require 'cucumber/formatter/legacy_api/adapter'
 require 'cucumber/core'
 require 'cucumber/core/gherkin/writer'
-require 'cucumber/mappings'
 require 'cucumber/runtime/step_hooks'
 require 'cucumber/runtime/before_hooks'
 require 'cucumber/runtime/after_hooks'
+require 'cucumber/filters'
 
 module Cucumber
   module Formatter::LegacyApi
@@ -1529,7 +1529,7 @@ module Cucumber
         context 'with exception in a single before hook' do
           class FailingBeforeHook
             def apply_before_hooks(test_case)
-              Runtime::BeforeHooks.new test_case, [proc { raise Failure }]
+              Runtime::BeforeHooks.new([proc { raise Failure }]).apply(test_case)
             end
           end
 
@@ -1688,7 +1688,7 @@ module Cucumber
           # the result of the first one.
           class FailingAndPassingBeforeHooks
             def apply_before_hooks(test_case)
-              Runtime::BeforeHooks.new test_case, [proc { raise Failure }, proc { }]
+              Runtime::BeforeHooks.new([proc { raise Failure }, proc { }]).apply(test_case)
             end
           end
 

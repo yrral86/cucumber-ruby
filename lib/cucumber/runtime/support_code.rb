@@ -152,7 +152,7 @@ module Cucumber
         action_blocks = ruby.hooks_for(:before, scenario).map do |hook|
           ->(result) { hook.invoke('Before', scenario.with_result(result)) }
         end
-        BeforeHooks.new test_case, action_blocks
+        BeforeHooks.new(action_blocks).apply(test_case)
       end
 
       def find_after_hooks(test_case)

@@ -172,11 +172,6 @@ module Cucumber
       end
     end
 
-    require 'cucumber/mappings'
-    def mappings
-      @mappings = Mappings.for(self)
-    end
-
     require 'cucumber/formatter/legacy_api/adapter'
     require 'cucumber/formatter/legacy_api/runtime_facade'
     require 'cucumber/formatter/legacy_api/results'

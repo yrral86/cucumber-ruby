@@ -1,5 +1,5 @@
 require 'cucumber/core/filter'
-require 'cucumber/mappings' # TODO: factor out the Source class from this file
+require 'cucumber/ast/facade'
 require 'cucumber/hooks'
 
 module Cucumber
@@ -27,7 +27,7 @@ module Cucumber
         private
 
         def scenario
-          @scenario ||= Mappings::Source.new(test_case).build_scenario
+          @scenario ||= Ast::Facade.new(test_case).build_scenario
         end
       end
 

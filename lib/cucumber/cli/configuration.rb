@@ -177,6 +177,10 @@ module Cucumber
         end
       end
 
+      def snippet_generators
+        @options[:snippet_generators] ||= []
+      end
+
       private
 
       def default_features_paths

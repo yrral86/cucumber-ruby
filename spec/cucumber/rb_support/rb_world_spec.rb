@@ -45,6 +45,19 @@ OUTPUT
 
       let(:scenario_context) { Object.new.extend(RbSupport::RbWorld) }
 
+      describe "#doc_string" do
+        it 'defaults to a blank content-type' do
+          actual = scenario_context.doc_string('DOC')
+          expect(actual).to be_kind_of(MultilineArgument::DocString)
+          expect(actual.content_type).to eq('')
+        end
+
+        it 'can have a content type' do
+          actual = scenario_context.doc_string('DOC','ruby')
+          expect(actual.content_type).to eq('ruby')
+        end
+      end
+
       describe "#table" do
         it 'produces Ast::Table by #table' do
           input = %{
@@ -56,7 +69,7 @@ OUTPUT
             MultilineArgument::DataTable
         end
       end
-    end
 
+    end
   end
 end

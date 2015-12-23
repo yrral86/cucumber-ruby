@@ -1,6 +1,7 @@
 require 'cucumber/gherkin/formatter/ansi_escapes'
 require 'cucumber/multiline_argument'
 require 'cucumber/core/ast/location'
+require 'cucumber/deprecate'
 
 module Cucumber
   module RbSupport
@@ -93,10 +94,13 @@ module Cucumber
       #   code = multiline_string(%{
       #     puts "this is ruby code"
       #   %}, 'ruby')
-      def doc_string(string_without_triple_quotes, content_type='', line_offset=0)
-        STDERR.puts AnsiEscapes.failed + "WARNING: #doc_string is deprecated. Just pass a regular String instead:" + caller[0] + AnsiEscapes.reset
-        # TODO: rename this method to multiline_string
-        @__cucumber_runtime.doc_string(string_without_triple_quotes, content_type, line_offset)
+      def doc_string(body, content_type='', line_offset=0)
+        Cucumber.deprecate(
+          "Just pass a regular String instead.",
+          "#{method(__method__).owner}.doc_string",
+          "2.9.9")
+        location = Core::Ast::Location.of_caller
+        MultilineArgument.doc_string(body, content_type, location)
       end
 
       # @deprecated Use {#puts} instead.

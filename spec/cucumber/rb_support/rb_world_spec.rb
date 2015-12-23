@@ -42,6 +42,21 @@ OUTPUT
           end
         end
       end
+
+      let(:scenario_context) { Object.new.extend(RbSupport::RbWorld) }
+
+      describe "#table" do
+        it 'produces Ast::Table by #table' do
+          input = %{
+        | account | description | amount |
+        | INT-100 | Taxi        | 114    |
+        | CUC-101 | Peeler      | 22     |
+          }
+          expect(scenario_context.table(input)).to be_kind_of \
+            MultilineArgument::DataTable
+        end
+      end
     end
+
   end
 end

@@ -1,6 +1,7 @@
 require 'delegate'
 require 'cucumber/multiline_argument/data_table'
 require 'cucumber/multiline_argument/doc_string'
+require 'cucumber/core/ast/data_table'
 
 module Cucumber
   module MultilineArgument

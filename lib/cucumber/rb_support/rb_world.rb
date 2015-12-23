@@ -1,4 +1,6 @@
 require 'cucumber/gherkin/formatter/ansi_escapes'
+require 'cucumber/multiline_argument'
+require 'cucumber/core/ast/location'
 
 module Cucumber
   module RbSupport
@@ -52,7 +54,7 @@ module Cucumber
         @__cucumber_runtime.invoke_dynamic_steps(steps_text, @__natural_language, location)
       end
 
-      # Parse Gherkin into a {Cucumber::Ast::Table} object.
+      # Build a Cucumber::MultilineArgument::DataTable object.
       #
       # Useful in conjunction with the #step method.
       # @example Create a table
@@ -61,9 +63,26 @@ module Cucumber
       #     | Matt  | matt@matt.com   |
       #     | Aslak | aslak@aslak.com |
       #   })
-      # @param [String] text_or_table The Gherkin string that represents the table
+      # @param [String, Array] text_or_table can either be a String:
+      #
+      #   table(%{
+      #     | account | description | amount |
+      #     | INT-100 | Taxi        | 114    |
+      #     | CUC-101 | Peeler      | 22     |
+      #   })
+      #
+      # or a 2D Array:
+      #
+      #   table([
+      #     %w{ account description amount },
+      #     %w{ INT-100 Taxi        114    },
+      #     %w{ CUC-101 Peeler      22     }
+      #   ])
+      #
       def table(text_or_table, file=nil, line_offset=0)
-        @__cucumber_runtime.table(text_or_table, file, line_offset)
+        location = file ?
+          Core::Ast::Location.new(file, line) : Core::Ast::Location.of_caller
+        MultilineArgument::DataTable.from(text_or_table, location)
       end
 
       # Create an {Cucumber::Ast::DocString} object

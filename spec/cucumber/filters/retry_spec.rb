@@ -43,9 +43,10 @@ describe Cucumber::Filters::Retry do
 
   context "failing test case" do 
     it "describes the test case the specified number of times" do 
-      expect(test_case).to receive(:describe_to).with(receiver).exactly(3).times
+      expect(receiver).to receive(:test_case) { |test_case|
+        configuration.notify(fail)
+      }.exactly(3).times
       filter.test_case(test_case)
-      configuration.notify(fail)
     end
   end
 
@@ -53,20 +54,21 @@ describe Cucumber::Filters::Retry do
 
     context "a little flaky" do 
       it "describes the test case twice" do 
-        expect(test_case).to receive(:describe_to).with(receiver).exactly(2).times
+        results = [fail, pass]
+        expect(receiver).to receive(:test_case) { |test_case|
+          configuration.notify(results.shift)
+        }.exactly(2).times
         filter.test_case(test_case)
-        configuration.notify(fail)
-        configuration.notify(pass)
       end
     end
 
     context "really flaky" do 
       it "describes the test case 3 times" do
-        expect(test_case).to receive(:describe_to).with(receiver).exactly(3).times
+        results = [fail, fail, pass]
+        expect(receiver).to receive(:test_case) { |test_case|
+          configuration.notify(results.shift)
+        }.exactly(3).times
         filter.test_case(test_case)
-        configuration.notify(fail)
-        configuration.notify(fail)
-        configuration.notify(pass)
       end
     end
   end

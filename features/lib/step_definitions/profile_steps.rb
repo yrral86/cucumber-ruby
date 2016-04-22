@@ -3,7 +3,7 @@ Given /^the following profiles? (?:are|is) defined:$/ do |profiles|
 end
 
 Then /^the (.*) profile should be used$/ do |profile|
-  step 'the stdout should contain:', profile
+  expect(all_stdout).to include(profile)
 end
 
 Then /^exactly these files should be loaded:\s*(.*)$/ do |files|

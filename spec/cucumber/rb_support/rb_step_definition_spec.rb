@@ -26,33 +26,6 @@ module Cucumber
         StepMatchSearch.new(rb.method(:step_matches), Configuration.default).call(text).first
       end
 
-      it "allows calling of other steps" do
-        dsl.Given(/Outside/) do
-          step "Inside"
-        end
-        dsl.Given(/Inside/) do
-          $inside = true
-        end
-
-        run_step "Outside"
-
-        expect($inside).to be true
-      end
-
-      it "allows calling of other steps with inline arg" do
-        dsl.Given(/Outside/) do
-          location = Core::Ast::Location.new(__FILE__, __LINE__)
-          step "Inside", table([['inside']])
-        end
-        dsl.Given(/Inside/) do |t|
-          $inside = t.raw[0][0]
-        end
-
-        run_step "Outside"
-
-        expect($inside).to eq 'inside'
-      end
-
       context "mapping to world methods" do
         it "calls a method on the world when specified with a symbol" do
           expect(rb.current_world).to receive(:with_symbol)
@@ -90,57 +63,6 @@ module Cucumber
           dsl.Given /With symbol/, :with_symbol
           expect(step_match("With symbol").file_colon_line).to eq "spec/cucumber/rb_support/rb_step_definition_spec.rb:#{__LINE__-1}"
         end
-      end
-
-      it "raises UndefinedDynamicStep when inside step is not defined" do
-        dsl.Given(/Outside/) do
-          step 'Inside'
-        end
-
-        expect(-> {
-          run_step "Outside"
-        }).to raise_error(Cucumber::UndefinedDynamicStep)
-      end
-
-      it "raises UndefinedDynamicStep when an undefined step is parsed dynamically" do
-        dsl.Given(/Outside/) do
-          steps %{
-            Given Inside
-          }
-        end
-
-        expect(-> {
-          run_step "Outside"
-        }).to raise_error(Cucumber::UndefinedDynamicStep)
-      end
-
-      it "raises UndefinedDynamicStep when an undefined step with doc string is parsed dynamically" do
-        dsl.Given(/Outside/) do
-          steps %{
-            Given Inside
-            """
-            abc
-            """
-          }
-        end
-
-        expect(-> {
-          run_step "Outside"
-        }).to raise_error(Cucumber::UndefinedDynamicStep)
-      end
-
-      it "raises UndefinedDynamicStep when an undefined step with data table is parsed dynamically" do
-        dsl.Given(/Outside/) do
-          steps %{
-            Given Inside
-             | a |
-             | 1 |
-          }
-        end
-
-        expect(-> {
-          run_step "Outside"
-        }).to raise_error(Cucumber::UndefinedDynamicStep)
       end
 
       it "allows forced pending" do

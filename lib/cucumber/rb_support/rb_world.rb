@@ -20,60 +20,14 @@ module Cucumber
       # @private
       attr_writer :__cucumber_runtime, :__natural_language
 
-      # Run a single Gherkin step
-      # @example Call another step
-      #   step "I am logged in"
-      # @example Call a step with quotes in the name
-      #   step %{the user "Dave" is logged in}
-      # @example Passing a table
-      #   step "the following users exist:", table(%{
-      #     | name  | email           |
-      #     | Matt  | matt@matt.com   |
-      #     | Aslak | aslak@aslak.com |
-      #   })
-      # @example Passing a multiline string
-      #   step "the email should contain:", "Dear sir,\nYou've won a prize!\n"
-      # @param [String] name The name of the step
-      # @param [String,Cucumber::Ast::DocString,Cucumber::Ast::Table] multiline_argument
-      def step(name, raw_multiline_arg=nil)
-        location = Core::Ast::Location.of_caller
-        @__cucumber_runtime.invoke_dynamic_step(name, MultilineArgument.from(raw_multiline_arg, location))
-      end
-
-      # Run a snippet of Gherkin
-      # @example
-      #   steps %{
-      #     Given the user "Susan" exists
-      #     And I am logged in as "Susan"
-      #   }
-      # @param [String] steps_text The Gherkin snippet to run
-      def steps(steps_text)
-        location = Core::Ast::Location.of_caller
-        @__cucumber_runtime.invoke_dynamic_steps(steps_text, @__natural_language, location)
-      end
-
       # Parse Gherkin into a {Cucumber::Ast::Table} object.
       #
-      # Useful in conjunction with the #step method.
-      # @example Create a table
-      #   users = table(%{
-      #     | name  | email           |
-      #     | Matt  | matt@matt.com   |
-      #     | Aslak | aslak@aslak.com |
-      #   })
       # @param [String] text_or_table The Gherkin string that represents the table
       def table(text_or_table, file=nil, line_offset=0)
         @__cucumber_runtime.table(text_or_table, file, line_offset)
       end
 
       # Create an {Cucumber::Ast::DocString} object
-      #
-      # Useful in conjunction with the #step method, when
-      # want to specify a content type.
-      # @example Create a multiline string
-      #   code = multiline_string(%{
-      #     puts "this is ruby code"
-      #   %}, 'ruby')
       def doc_string(string_without_triple_quotes, content_type='', line_offset=0)
         STDERR.puts AnsiEscapes.failed + "WARNING: #doc_string is deprecated. Just pass a regular String instead:" + caller[0] + AnsiEscapes.reset
         # TODO: rename this method to multiline_string

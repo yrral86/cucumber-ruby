@@ -1,4 +1,3 @@
-@wip
 Feature: Retry failing tests
 
   Retry gives you a way to get through flaky tests that usually pass after a few runs.

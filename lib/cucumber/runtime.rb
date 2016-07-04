@@ -230,6 +230,7 @@ module Cucumber
         filters << Cucumber::Core::Test::NameFilter.new(name_regexps)
         filters << Cucumber::Core::Test::LocationsFilter.new(filespecs.locations)
         filters << Filters::Randomizer.new(@configuration.seed) if @configuration.randomize?
+        filters << Filters::Retry.new(@configuration)
         filters << Filters::Quit.new
         # TODO: can we just use RbLanguages's step definitions directly?
         step_match_search = StepMatchSearch.new(@support_code.ruby.method(:step_matches), @configuration)

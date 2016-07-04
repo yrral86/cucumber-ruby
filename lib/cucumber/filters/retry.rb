@@ -11,7 +11,7 @@ module Cucumber
         configuration.on_event(:after_test_case) do |event|
           next unless retry_required?(test_case, event)
 
-          test_case_counts[test_case] += 1
+          test_case_counts[test_case.name] += 1
           event.test_case.describe_to(receiver)
         end
 
@@ -21,7 +21,7 @@ module Cucumber
       private
 
       def retry_required?(test_case, event)
-        event.test_case == test_case && event.result.failed? && test_case_counts[test_case] < configuration.retry_attempts
+        event.test_case.name == test_case.name && event.result.failed? && test_case_counts[test_case.name] < configuration.retry_attempts
       end
 
       def test_case_counts

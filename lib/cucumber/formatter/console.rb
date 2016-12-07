@@ -79,7 +79,12 @@ module Cucumber
         end
       end
 
-      def print_statistics(duration, config, counts, rerun_suggestions)
+      def print_statistics(duration, config, counts, rerun_suggestions, issues)
+        if issues.any?
+          @io.puts issues.to_s
+          @io.puts
+        end
+
         if rerun_suggestions.any?
           @io.puts rerun_suggestions.to_s
           @io.puts

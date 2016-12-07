@@ -4,6 +4,7 @@ require 'cucumber/formatter/backtrace_filter'
 require 'cucumber/formatter/console'
 require 'cucumber/formatter/console_counts'
 require 'cucumber/formatter/console_rerun_suggestions'
+require 'cucumber/formatter/console_issues'
 require 'cucumber/formatter/io'
 require 'cucumber/formatter/duration_extractor'
 require 'cucumber/formatter/hook_query_visitor'
@@ -30,6 +31,7 @@ module Cucumber
         @passed_test_cases = []
         @counts = ConsoleCounts.new(config)
         @rerun_suggestions = ConsoleRerunSuggestions.new(config)
+        @issues = ConsoleIssues.new(config)
         config.on_event :step_match, &method(:on_step_match)
         config.on_event :test_case_starting, &method(:on_test_case_starting)
         config.on_event :test_step_finished, &method(:on_test_step_finished)
@@ -79,7 +81,7 @@ module Cucumber
       def print_summary
         print_elements(@pending_step_matches, :pending, 'steps')
         print_elements(@failed_results, :failed, 'steps')
-        print_statistics(@total_duration, @config, @counts, @rerun_suggestions)
+        print_statistics(@total_duration, @config, @counts, @rerun_suggestions, @issues)
         snippet_text_proc = lambda { |step_keyword, step_name, multiline_arg|
           snippet_text(step_keyword, step_name, multiline_arg)
         }

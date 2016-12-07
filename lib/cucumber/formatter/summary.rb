@@ -3,6 +3,7 @@ require 'cucumber/formatter/io'
 require 'cucumber/formatter/console'
 require 'cucumber/formatter/console_counts'
 require 'cucumber/formatter/console_rerun_suggestions'
+require 'cucumber/formatter/console_issues'
 require 'cucumber/core/test/result'
 
 module Cucumber
@@ -17,6 +18,7 @@ module Cucumber
         @config, @io = config, ensure_io(config.out_stream)
         @counts = ConsoleCounts.new(@config)
         @rerun_suggestions = ConsoleRerunSuggestions.new(@config)
+        @issues = ConsoleIssues.new(@config)
         @start_time = Time.now
 
         @config.on_event :test_case_starting do |event|
@@ -31,7 +33,7 @@ module Cucumber
         @config.on_event :test_run_finished do |event|
           duration = Time.now - @start_time
           @io.puts
-          print_statistics(duration, @config, @counts, @rerun_suggestions)
+          print_statistics(duration, @config, @counts, @rerun_suggestions, @issues)
         end
       end
 

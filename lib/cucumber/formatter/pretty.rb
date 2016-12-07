@@ -4,7 +4,7 @@ require 'cucumber/formatter/console'
 require 'cucumber/formatter/io'
 require 'cucumber/gherkin/formatter/escaping'
 require 'cucumber/formatter/console_counts'
-require 'cucumber/formatter/console_issues'
+require 'cucumber/formatter/console_rerun_suggestions'
 
 module Cucumber
   module Formatter
@@ -33,7 +33,7 @@ module Cucumber
         @previous_step_keyword = nil
         @snippets_input = []
         @counts = ConsoleCounts.new(runtime.configuration)
-        @issues = ConsoleIssues.new(runtime.configuration)
+        @rerun_suggestions = ConsoleRerunSuggestions.new(runtime.configuration)
       end
 
       def before_features(_features)
@@ -244,7 +244,7 @@ module Cucumber
       end
 
       def print_summary(features)
-        print_statistics(features.duration, @config, @counts, @issues)
+        print_statistics(features.duration, @config, @counts, @rerun_suggestions)
         print_snippets(@options)
         print_passing_wip(@options)
       end

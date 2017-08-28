@@ -403,40 +403,20 @@ module Cucumber
         "#{type}_#{@indices[:type]}"
       end
 
-      def rails_exception_details(message, backtrace=[])
-        return [message, backtrace] unless defined?(RAILS_ROOT) && message.include?('Exception caught')
+      def exception_message(message)
+        return message unless defined?(RAILS_ROOT) && message.include?('Exception caught')
 
-        matches = message.match(/Showing <i>(.+)<\/i>(?:.+) #(\d+)/)
-        backtrace += ["#{RAILS_ROOT}/#{matches[1]}:#{matches[2]}"] if matches
         matches = message.match(/<code>([^(\/)]+)<\//m)
 
-        matches ? [matches[1], backtrace] : ['', backtrace]
+        matches ? matches[1] : ''
       end
 
       def build_exception_detail(exception)
-        backtrace = Array.new
+        message = exception_details(exception.message, [])
+        message = "#{message} (#{exception.class})" unless exception.instance_of?(RuntimeError)
 
-        builder.div(:class => 'message') do
-          message = exception.message
-
-          message, backtrace = rails_exception_details(message, backtrace)
-
-          unless exception.instance_of?(RuntimeError)
-            message = "#{message} (#{exception.class})"
-          end
-
-          builder.pre do
-            builder.text!(message)
-          end
-        end
-
-        builder.div(:class => 'backtrace') do
-          builder.pre do
-            backtrace = exception.backtrace
-            backtrace.delete_if { |x| x =~ /\/gems\/(cucumber|rspec)/ }
-            builder << backtrace_line(backtrace.join("\n"))
-          end
-        end
+        builder.build_exception_div(message)
+        builder.build_backtrace_div(backtrace)
 
         extra = extra_failure_content(backtrace)
         builder << extra unless extra == ''
@@ -517,16 +497,6 @@ module Cucumber
 
       def format_exception(exception)
         ([exception.message.to_s] + exception.backtrace).join("\n")
-      end
-
-      def backtrace_line(line)
-        if ENV['TM_PROJECT_DIRECTORY']
-          line.gsub(/^([^:]*\.(?:rb|feature|haml)):(\d*).*$/) do
-            "<a href=\"txmt://open?url=file://#{File.expand_path($1)}&line=#{$2}\">#{$1}:#{$2}</a> "
-          end
-        else
-          line
-        end
       end
 
       def print_stats(features)

@@ -49,7 +49,30 @@ module Cucumber
         end
       end
 
+      def build_exception_div(message)
+        div(class: 'message') do
+          pre { text!(message) }
+        end
+      end
+
+      def build_backtrace_div(backtrace)
+        div(class: 'backtrace') do
+          pre do
+            backtrace.reject! {|x| x =~ /\/gems\/(cucumber|rspec)/ }
+            self << backtrace_line(backtrace.join("\n"))
+          end
+        end
+      end
+
       private
+
+      def backtrace_line(line)
+        return line unless ENV['TM_PROJECT_DIRECTORY']
+
+        line.gsub(/^([^:]*\.(?:rb|feature|haml)):(\d*).*$/) do
+          "<a href=\"txmt://open?url=file://#{File.expand_path($1)}&line=#{$2}\">#{$1}:#{$2}</a> "
+        end
+      end
 
       def summary_div
         div(id: 'summary') do

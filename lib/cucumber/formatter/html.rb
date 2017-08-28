@@ -403,7 +403,9 @@ module Cucumber
         "#{type}_#{@indices[:type]}"
       end
 
-      def rails_exception_details(message, backtrace)(message, backtrace=[])
+      def rails_exception_details(message, backtrace=[])
+        return [message, backtrace] unless defined?(RAILS_ROOT) && message.include?('Exception caught')
+
         matches = message.match(/Showing <i>(.+)<\/i>(?:.+) #(\d+)/)
         backtrace += ["#{RAILS_ROOT}/#{matches[1]}:#{matches[2]}"] if matches
         matches = message.match(/<code>([^(\/)]+)<\//m)
@@ -417,9 +419,7 @@ module Cucumber
         builder.div(:class => 'message') do
           message = exception.message
 
-          if defined?(RAILS_ROOT) && message.include?('Exception caught')
-            message, backtrace = rails_exception_details(message, backtrace)
-          end
+          message, backtrace = rails_exception_details(message, backtrace)
 
           unless exception.instance_of?(RuntimeError)
             message = "#{message} (#{exception.class})"

@@ -5,6 +5,11 @@
 version: 2.0
 
 jobs:
+  publish:
+    steps:
+      - checkout
+      - run: git remote add cucumber-pro git@git.cucumber.pro:cucumber-ruby.git
+      - run: push cucumber-pro
   "ruby-2.4.1":
     docker:
        - image: circleci/ruby:2.4.1
@@ -98,3 +103,4 @@ workflows:
       - "ruby-2.3.5"
       - "ruby-2.2.8"
       - "jruby-9.1.13.0"
+      - publish

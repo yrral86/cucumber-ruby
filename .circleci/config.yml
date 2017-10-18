@@ -6,6 +6,7 @@ version: 2.0
 
 jobs:
   publish:
+    machine: true
     steps:
       - checkout
       - run: git remote add cucumber-pro git@git.cucumber.pro:cucumber-ruby.git

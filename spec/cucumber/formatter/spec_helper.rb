@@ -38,12 +38,8 @@ module Cucumber
         event_bus.test_run_finished
       end
 
-      require 'cucumber/formatter/legacy_api/adapter'
       def report
-        @report ||= LegacyApi::Adapter.new(
-          Fanout.new([@formatter]),
-          actual_runtime.results,
-          actual_runtime.configuration)
+        @report ||= Fanout.new([@formatter])
       end
 
       require 'cucumber/core/gherkin/document'
@@ -53,10 +49,6 @@ module Cucumber
 
       def gherkin
         self.class.feature_content || raise('No feature content defined!')
-      end
-
-      def runtime
-        @runtime_facade ||= LegacyApi::RuntimeFacade.new(actual_runtime.results, actual_runtime.support_code, actual_runtime.configuration)
       end
 
       def actual_runtime

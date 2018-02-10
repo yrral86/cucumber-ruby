@@ -350,7 +350,7 @@ module Cucumber
         return if @hide_this_step
 
         @cell_type = @outline_row == 0 ? :th : :td
-        attributes = {:id => "#{@row_id}_#{@col_index}", :class => 'step'}
+        attributes = { :id => "#{@row_id}_#{@col_index}", :class => 'step' }
         attributes[:class] += " #{status}" if status
         build_cell(@cell_type, value, attributes)
         scenario_color(status) if @inside_outline

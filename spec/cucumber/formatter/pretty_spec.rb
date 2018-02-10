@@ -295,7 +295,7 @@ OUTPUT
             end
 
             it 'displays hook output appropriately ' do
-              expect( @out.string ).to include <<OUTPUT
+              expect(@out.string).to include <<OUTPUT
 Feature: 
 
   Scenario: 
@@ -340,7 +340,7 @@ OUTPUT
             end
 
             it 'displays hook output appropriately ' do
-              expect( @out.string ).to include <<OUTPUT
+              expect(@out.string).to include <<OUTPUT
 Feature: 
 
   Background: 
@@ -376,7 +376,7 @@ OUTPUT
             FEATURE
 
             it 'includes the tags in the output ' do
-              expect( @out.string ).to include <<OUTPUT
+              expect(@out.string).to include <<OUTPUT
 @tag1
 Feature: 
 
@@ -423,7 +423,7 @@ OUTPUT
             FEATURE
 
             it 'includes the all comments except for data table rows in the output ' do
-              expect( @out.string ).to include <<OUTPUT
+              expect(@out.string).to include <<OUTPUT
 #comment1
 Feature: 
 
@@ -459,7 +459,7 @@ OUTPUT
         before(:each) do
           Cucumber::Term::ANSIColor.coloring = false
           @out = StringIO.new
-          @formatter = Pretty.new(runtime, @out, {:no_multiline => true})
+          @formatter = Pretty.new(runtime, @out, { :no_multiline => true })
         end
 
         describe 'given a single feature' do
@@ -722,7 +722,7 @@ OUTPUT
         before(:each) do
           Cucumber::Term::ANSIColor.coloring = false
           @out = StringIO.new
-          @formatter = Pretty.new(runtime, @out, {:source => true})
+          @formatter = Pretty.new(runtime, @out, { :source => true })
         end
 
         describe 'given a single feature' do
@@ -799,7 +799,7 @@ OUTPUT
         before(:each) do
           Cucumber::Term::ANSIColor.coloring = false
           @out = StringIO.new
-          @formatter = Pretty.new(runtime, @out, {snippets: true})
+          @formatter = Pretty.new(runtime, @out, { snippets: true })
           run_defined_feature
         end
 

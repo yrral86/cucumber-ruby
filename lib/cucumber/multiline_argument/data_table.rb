@@ -402,7 +402,7 @@ module Cucumber
         # TODO: factor out this code so we don't depend on such a big lump of old cruft
         require 'cucumber/formatter/pretty'
         require 'cucumber/formatter/legacy_api/adapter'
-        options = {:color => true, :indent => 2, :prefixes => TO_S_PREFIXES}.merge(options)
+        options = { :color => true, :indent => 2, :prefixes => TO_S_PREFIXES }.merge(options)
         io = StringIO.new
 
         c = Cucumber::Term::ANSIColor.coloring?

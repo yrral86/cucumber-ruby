@@ -146,12 +146,6 @@ Layout/SpaceInsideParens:
     - 'spec/cucumber/step_match_search_spec.rb'
     - 'spec/cucumber/world/pending_spec.rb'
 
-# Offense count: 18
-# Cop supports --auto-correct.
-Layout/SpaceInsidePercentLiteralDelimiters:
-  Exclude:
-    - 'spec/cucumber/rake/task_spec.rb'
-
 # Offense count: 2
 Lint/AmbiguousBlockAssociation:
   Exclude:

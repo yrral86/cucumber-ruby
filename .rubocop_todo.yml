@@ -99,20 +99,6 @@ Layout/SpaceInsideArrayLiteralBrackets:
     - 'lib/cucumber/term/ansicolor.rb'
     - 'spec/cucumber/multiline_argument/data_table_spec.rb'
 
-# Offense count: 12
-# Cop supports --auto-correct.
-Layout/SpaceInsideArrayPercentLiteral:
-  Exclude:
-    - 'spec/cucumber/multiline_argument/data_table_spec.rb'
-
-# Offense count: 214
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces, SpaceBeforeBlockParameters.
-# SupportedStyles: space, no_space
-# SupportedStylesForEmptyBraces: space, no_space
-Layout/SpaceInsideBlockBraces:
-  Enabled: false
-
 # Offense count: 82
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces.

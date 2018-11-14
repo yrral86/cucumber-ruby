@@ -169,7 +169,8 @@ module Cucumber
             formatter.step_name(
               keyword,
               step_match,
-              status,
+              # timeout passes nil status
+              status || 'failed',
               source_indent,
               background,
               location.to_s)

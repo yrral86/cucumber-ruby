@@ -10,7 +10,92 @@ Please visit [cucumber/CONTRIBUTING.md](https://github.com/cucumber/cucumber/blo
 
 ----
 
-## [In Git](https://github.com/cucumber/cucumber-ruby/compare/v3.1.0...master) (Not released)
+## [In Git](https://github.com/cucumber/cucumber-ruby/compare/v4.0.0.rc.1...master) (Not released)
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Added
+
+### Improved
+
+## [4.0.0.rc.1](https://github.com/cucumber/cucumber-ruby/compare/v3.1.2...v4.0.0.rc.1) (2018-09-29)
+
+### Added
+
+* Added support for new `Rule` keyword. [Read more here.](https://github.com/cucumber/cucumber/blob/master/gherkin/CHANGELOG.md#6013---2018-09-25)
+* Added new `dots` formatter. This is the first step of a larger strategy to move the formatters to a new architecture where they delegate to shared executables via messages.
+
+### Changed
+
+* Use Gherkin v6.
+  ([#1313](https://github.com/cucumber/cucumber-ruby/pull/1313)
+   [brasmusson](https://github.com/brasmusson))
+* Do not apply Before and After Hooks to Test Cases with no Test Steps.
+  ([#1311](https://github.com/cucumber/cucumber-ruby/pull/1311)
+   [brasmusson](https://github.com/brasmusson))
+* Pass the registry to the Wire plugin.
+  ([#1309](https://github.com/cucumber/cucumber-ruby/pull/1309)
+   [brasmusson](https://github.com/brasmusson))
+* Adapt to using the Gherkin compiler and Pickles in the core.
+  ([#1309](https://github.com/cucumber/cucumber-ruby/pull/1309)
+   [brasmusson](https://github.com/brasmusson))
+* Let the Pretty Formatter use events.
+  ([#1305](https://github.com/cucumber/cucumber-ruby/pull/1305)
+   [brasmusson](https://github.com/brasmusson))
+* Use single quotes in generated template steps ([#1323](https://github.com/cucumber/cucumber-ruby/pull/1323) [acant](https://github.com/acant))
+
+### Removed
+
+* Remove the support of old style tag expressions.
+  ([#1314](https://github.com/cucumber/cucumber-ruby/pull/1314),
+   [brasmusson](https://github.com/brasmusson))
+* Remove the Legacy API for Formatters.
+  ([#1230](https://github.com/cucumber/cucumber-ruby/pull/1230),
+   [#839](https://github.com/cucumber/cucumber-ruby/issues/839)
+   [brasmusson](https://github.com/brasmusson))
+* Remove the JSON Pretty Formatter (which was the same as the JSON formatter).
+  ([brasmusson](https://github.com/brasmusson))
+* Remove the HTML Formatter.
+  ([#1306](https://github.com/cucumber/cucumber-ruby/pull/1306)
+   [brasmusson](https://github.com/brasmusson))
+
+### Fixed
+
+*  Wire protocol compatibility for docstrings.
+  ([#1183](https://github.com/cucumber/cucumber-ruby/issues/1183))
+* Let the Rerun Formatter handle flaky scenarios.
+  ([#1310](https://github.com/cucumber/cucumber-ruby/pull/1310)
+   [brasmusson](https://github.com/brasmusson))
+
+### Improved
+
+* Code style changes completed as per backlog of Rubocop TODO file. ([#1021](https://github.com/cucumber/cucumber-ruby/issues/1021) [@jaysonesmith](https://github.com/jaysonesmith))
+
+## [3.1.2](https://github.com/cucumber/cucumber-ruby/compare/v3.1.1...v3.1.2) (2018-07-13)
+
+### Changed
+
+* Upgraded to `cucumber-core` 3.2.0
+* Change to use the gherkin step location in the Json formatter.
+  ([#1243](https://github.com/cucumber/cucumber-ruby/pull/1243),
+   [#1108](https://github.com/cucumber/cucumber-ruby/issues/1108)
+   [brasmusson](https://github.com/brasmusson))
+
+### Fixed
+
+* Support ParameterType with empty capture group.
+  ([#404](https://github.com/cucumber/cucumber/issues/404)
+   [aslakhellesoy](https://github.com/aslakhellesoy))
+
+## [3.1.1](https://github.com/cucumber/cucumber-ruby/compare/v3.1.0...v3.1.1) (2018-06-03)
 
 ### Added
 
@@ -19,6 +104,8 @@ Please visit [cucumber/CONTRIBUTING.md](https://github.com/cucumber/cucumber/blo
 ### Changed
 
 * Add Rubocop to default Rake task ([#1256](https://github.com/cucumber/cucumber-ruby/pull/1256) [@jaysonesmith](https://github.com/jaysonesmith))
+* Upgraded `cucumber-expressions` dependency to ~> 6.0.0 ([#1299](https://github.com/cucumber/cucumber-ruby/pull/1299) [@aslakhellesoy](https://github.com/aslakhellesoy))
+* Upgraded to `gherkin` 5.1.0 ([#1299](https://github.com/cucumber/cucumber-ruby/pull/1299) [@aslakhellesoy](https://github.com/aslakhellesoy))
 
 ### Deprecated
 
@@ -30,42 +117,17 @@ Please visit [cucumber/CONTRIBUTING.md](https://github.com/cucumber/cucumber/blo
 
 ### Fixed
 
+* Make `--fail-fast` play nice with `--retry` ([#1283](https://github.com/cucumber/cucumber-ruby/pull/1283) [@yrral86](https://github.com/yrral86))
 * Fix incompatible encodings error in JUnit formatter ([#1244](https://github.com/cucumber/cucumber-ruby/pull/1244) [@NickAb](https://github.com/NickAb)) (except on JRuby, see [#1259](https://github.com/cucumber/cucumber-ruby/pull/1259))
 * Fix the handling of failed hooks in the JUnit Formatter ([@brasmusson](https://github.com/brasmusson))
+* Fixed lengthy stacktrace when running `cucumber -f stepdefs` when steps aren't defined. ([#1286](https://github.com/cucumber/cucumber-ruby/pull/1286) [@xtrasimplicity](https://github.com/xtrasimplicity))
+* Fixed an error with HTML snippet generation when `frozen_string_literal` is enabled and the `Syntax` gem is not installed. ([#1287](https://github.com/cucumber/cucumber-ruby/pull/1287) [@xtrasimplicity](https://github.com/xtrasimplicity))
 
 ### Improved
 
-* Fix Spacing before comma, in lambda, and array literal brackets ([#1277](https://github.com/cucumber/cucumber-ruby/pull/1277) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/Space cops: around operators and before block braces ([#1276](https://github.com/cucumber/cucumber-ruby/pull/1276) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/IndentHeredoc, Consistency, IndentationWidth, and new violations ([#1269](https://github.com/cucumber/cucumber-ruby/pull/1269) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Multiline Violations: Braces, Blocks, Method call work, etc. ([#1271](https://github.com/cucumber/cucumber-ruby/pull/1271) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/EmptyLinesAroundClassBody ([#1264](https://github.com/cucumber/cucumber-ruby/pull/1264) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/SpaceAfterComma ([#1272](https://github.com/cucumber/cucumber-ruby/pull/1272) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/SpaceAroundEqualsInParameterDefault & Layout/SpaceAroundKeyword ([#1273](https://github.com/cucumber/cucumber-ruby/pull/1273) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/IndentArray & Layout/IndentHash ([#1268](https://github.com/cucumber/cucumber-ruby/pull/1268) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/EmptyLinesAroundModuleBody ([#1266](https://github.com/cucumber/cucumber-ruby/pull/1266) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/EmptyLinesAroundBlockBody ([#1263](https://github.com/cucumber/cucumber-ruby/pull/1263) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix: Layout/EmptyLines, ...AroundAccessModifier, ...AroundArguments, ...AroundExceptionHandlingKeywords ([#1262](https://github.com/cucumber/cucumber-ruby/pull/1262) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/LeadingCommentSpace auto ([#1270](https://github.com/cucumber/cucumber-ruby/pull/1270) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/ExtraSpacing ([#1267](https://github.com/cucumber/cucumber-ruby/pull/1267) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/EmptyLineAfterMagicComment ([#1255](https://github.com/cucumber/cucumber-ruby/pull/1255) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/DotPosition ([#1254](https://github.com/cucumber/cucumber-ruby/pull/1254) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/BlockEndNewline ([#1253](https://github.com/cucumber/cucumber-ruby/pull/1253) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Ordered/Dependencies ([#1251](https://github.com/cucumber/cucumber-ruby/pull/1251) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Gemspec/RequiredRubyVersion ([#1252](https://github.com/cucumber/cucumber-ruby/pull/1252) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Layout/EmptyLineBetweenDefs ([#1257](https://github.com/cucumber/cucumber-ruby/pull/1257) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Bundler/OrderedGems ([#1250](https://github.com/cucumber/cucumber-ruby/pull/1250) [@jaysonesmith](https://github.com/jaysonesmith))
-* Update Rubocop version to 0.52.1 and redo rubocop_todo.yml ([#1246](https://github.com/cucumber/cucumber-ruby/pull/1246) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Style/BlockDelimiters ([#1224](https://github.com/cucumber/cucumber-ruby/pull/1224) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Performance/RedundantBlockCall ([#1220](https://github.com/cucumber/cucumber-ruby/pull/1220) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Style/AlignParameters ([#1221](https://github.com/cucumber/cucumber-ruby/pull/1221) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Style/AsciiComments ([#1222](https://github.com/cucumber/cucumber-ruby/pull/1222) [@jaysonesmith](https://github.com/jaysonesmith))
-* Exclude Style/AsciiIdentifiers ([#1223](https://github.com/cucumber/cucumber-ruby/pull/1223) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Lint/HandleExceptions ([#1226](https://github.com/cucumber/cucumber-ruby/pull/1226) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Style/AccessorMethodName ([#1228](https://github.com/cucumber/cucumber-ruby/pull/1228) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix Lint/IneffectiveAccessModifier ([#1227](https://github.com/cucumber/cucumber-ruby/pull/1227) [@jaysonesmith](https://github.com/jaysonesmith))
+* N/A
 
-## [3.1.0](https://github.com/cucumber/cucumber-ruby/compare/v3.0.2...3.1.0) (2017-11-28)
+## [3.1.0](https://github.com/cucumber/cucumber-ruby/compare/v3.0.2...v3.1.0) (2017-11-28)
 
 ### Added
 
@@ -95,13 +157,6 @@ Please visit [cucumber/CONTRIBUTING.md](https://github.com/cucumber/cucumber/blo
 * Change test expectation to handle Ruby's unstable sorting ([#1210](https://github.com/cucumber/cucumber-ruby/pull/1210) [@jaysonesmith](https://github.com/jaysonesmith))
 * Fix the printing of newlines in the rerun formatter - a problem introduced in [#1162](https://github.com/cucumber/cucumber-ruby/issues/1162) ([#1207](https://github.com/cucumber/cucumber-ruby/issues/1207) [@brasmusson](https://github.com/brasmusson))
 * Handle the `--retry` option in profiles ([#1050](https://github.com/cucumber/cucumber-ruby/issues/1050) [@brasmusson](https://github.com/brasmusson))
-
-### Improved
-
-* Exclude the legacy_api from rubocop, regenerate Rubocop Todo ([@jaysonesmith](https://github.com/jaysonesmith), [@brasmusson](https://github.com/brasmusson))
-* Review and handle excluded/ignored cops ([#1208](https://github.com/cucumber/cucumber-ruby/pull/1208) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix SymbolProc issues ([#1212](https://github.com/cucumber/cucumber-ruby/pull/1212) [@jaysonesmith](https://github.com/jaysonesmith))
-* Fix TrailingBlankLines ([#1211](https://github.com/cucumber/cucumber-ruby/pull/1211) [@jaysonesmith](https://github.com/jaysonesmith))
 
 ## [3.0.1](https://github.com/cucumber/cucumber-ruby/compare/v3.0.0...3.0.1) (2017-09-29)
 
@@ -138,12 +193,6 @@ Please visit [cucumber/CONTRIBUTING.md](https://github.com/cucumber/cucumber/blo
 * Refactor: Extract HTMLBuilder#string_to_embed method to DRY up code ([#1187](https://github.com/cucumber/cucumber-ruby/pulls/1187) [@danascheider](https://github.com/danascheider))
 * As per [#251](https://github.com/cucumber/cucumber/issues/251): renamed History.md to CHANGELOG.md, added contributing message at beginning, and misc formatting. ([#1185](https://github.com/cucumber/cucumber-ruby/issues/1185) [jaysonesmith](https://github.com/jaysonesmith))
 * Use past tense in event names (`xStarting` -> `xStarted`) ([#1166](https://github.com/cucumber/cucumber-ruby/issues/1166) @brasmusson).
-* Fix Lint/DeprecatedClassMethods ([#1172](https://github.com/cucumber/cucumber-ruby/issues/1172) [jaysonesmith](https://github.com/jaysonesmith))
-* Fix Lint/DuplicateMethods ([#1173](https://github.com/cucumber/cucumber-ruby/issues/1173) [jaysonesmith](https://github.com/jaysonesmith))
-* Fix Metrics/LineLength ([#1175](https://github.com/cucumber/cucumber-ruby/issues/1175), [#1175](https://github.com/cucumber/cucumber-ruby/issues/1175), [#1176](https://github.com/cucumber/cucumber-ruby/issues/1176) [jaysonesmith](https://github.com/jaysonesmith))
-* Fix Style/AlignArray ([#1177](https://github.com/cucumber/cucumber-ruby/issues/1177) [jaysonesmith](https://github.com/jaysonesmith))
-* Fix Style/AndOr ([#1178](https://github.com/cucumber/cucumber-ruby/issues/1178) [jaysonesmith](https://github.com/jaysonesmith))
-* Fix Multiple Cops ([#1179](https://github.com/cucumber/cucumber-ruby/issues/1179) [jaysonesmith](https://github.com/jaysonesmith))
 
 ## [3.0.0.pre.2](https://github.com/cucumber/cucumber-ruby/compare/v2.4.0...v3.0.0.pre.2)
 

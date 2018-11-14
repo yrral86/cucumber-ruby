@@ -18,19 +18,6 @@ module Cucumber
           end
         end
 
-        # @deprecated use #buffer_string
-        def buffer
-          require 'cucumber/deprecate.rb'
-          Cucumber.deprecate(
-            'Use Cucumber::Formatter::Interceptor::Pipe#buffer_string instead',
-            'Cucumber::Formatter::Interceptor::Pipe#buffer',
-            '3.99'
-          )
-          lock.synchronize do
-            return @buffer.string.lines
-          end
-        end
-
         def buffer_string
           lock.synchronize do
             return @buffer.string.dup
@@ -43,17 +30,15 @@ module Cucumber
         end
 
         def method_missing(method, *args, &blk)
-          @pipe.send(method, *args, &blk)
+          @pipe.send(method, *args, &blk) || super
         end
 
-        def respond_to?(method, include_private = false)
+        def respond_to_missing?(method, include_private = false)
           super || @pipe.respond_to?(method, include_private)
         end
 
         def self.validate_pipe(pipe)
-          unless [:stdout, :stderr].include? pipe
-            raise ArgumentError, '#wrap only accepts :stderr or :stdout'
-          end
+          raise ArgumentError, '#wrap only accepts :stderr or :stdout' unless %i[stdout stderr].include? pipe
         end
 
         def self.unwrap!(pipe)
@@ -75,10 +60,10 @@ module Cucumber
 
           case pipe
           when :stderr
-            $stderr = self.new($stderr)
+            $stderr = new($stderr)
             return $stderr
           when :stdout
-            $stdout = self.new($stdout)
+            $stdout = new($stdout)
             return $stdout
           end
         end

@@ -14,7 +14,7 @@ module Cucumber
     end
 
     describe 'with custom user options' do
-      let(:user_options) { { :autoload_code_paths => ['foo/bar/baz'] } }
+      let(:user_options) { { autoload_code_paths: ['foo/bar/baz'] } }
       subject { Configuration.new(user_options) }
 
       it 'allows you to override the defaults' do
@@ -35,15 +35,6 @@ module Cucumber
 
         expect(configuration.support_to_load).to eq [
           '/features/support/env.rb',
-          '/features/support/a_file.rb'
-        ]
-      end
-
-      it 'does not require env.rb files when dry run' do
-        configuration = Configuration.new(dry_run: true)
-        given_the_following_files('/features/support/a_file.rb', '/features/support/env.rb')
-
-        expect(configuration.support_to_load).to eq [
           '/features/support/a_file.rb'
         ]
       end
@@ -88,7 +79,7 @@ module Cucumber
 
     context 'selecting feature files' do
       it 'preserves the order of the feature files' do
-        configuration = Configuration.new(paths: %w{b.feature c.feature a.feature})
+        configuration = Configuration.new(paths: %w[b.feature c.feature a.feature])
 
         expect(configuration.feature_files).to eq ['b.feature', 'c.feature', 'a.feature']
       end
@@ -97,7 +88,7 @@ module Cucumber
         allow(File).to receive(:directory?) { true }
         allow(Dir).to receive(:[]).with('feature_directory/**/*.feature') { ['cucumber.feature'] }
 
-        configuration = Configuration.new(paths: %w{feature_directory/})
+        configuration = Configuration.new(paths: %w[feature_directory/])
 
         expect(configuration.feature_files).to eq ['cucumber.feature']
       end
@@ -120,7 +111,7 @@ module Cucumber
           'domain folder/different cuke.feature:4:5 bar.feature'
         )
 
-        configuration = Configuration.new(paths: %w{@rerun.txt})
+        configuration = Configuration.new(paths: %w[@rerun.txt])
 
         expect(configuration.feature_files).to eq [
           'cucumber.feature:1:3',
